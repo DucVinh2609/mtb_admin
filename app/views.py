@@ -1,13 +1,3 @@
-# -*- encoding: utf-8 -*-
-"""
-Argon Dashboard - coded in Flask
-
-Author  : AppSeed App Generator
-Design  : Creative-Tim.com
-License : MIT 
-Support : https://appseed.us/support 
-"""
-
 from flask               import render_template, request, url_for, redirect, send_from_directory
 from flask_login         import login_user, logout_user, current_user, login_required
 from werkzeug.exceptions import HTTPException, NotFound, abort
@@ -17,6 +7,14 @@ import os, logging
 from app        import app, lm, db, bc
 from app.models import User
 from app.forms  import LoginForm, RegisterForm
+from flaskext.mysql import MySQL
+
+mysql = MySQL()
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = ''
+app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
+app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+mysql.init_app(app)
 
 @app.route('/sitemap.xml')
 def sitemap():
@@ -94,7 +92,7 @@ def register():
 # authenticate user
 @app.route('/login.html', methods=['GET', 'POST'])
 def login():
-    
+
     # Declare the login form
     form = LoginForm(request.form)
 
@@ -109,18 +107,28 @@ def login():
         password = request.form.get('password', '', type=str) 
 
         # filter User out of database through username
-        user = User.query.filter_by(user=username).first()
-
-        if user:
+        # user = User.query.filter_by(user=username).first()
+        # if username == 'admin' and password== 'admin':
+        #   return redirect(url_for('index'))
+        # else:
+        #   msg = "Unkkown user"
+        # if user:
             
-            #if bc.check_password_hash(user.password, password):
-            if user.password == password:
-                login_user(user)
-                return redirect(url_for('index'))
-            else:
-                msg = "Wrong password. Please try again."
+        #     #if bc.check_password_hash(user.password, password):
+        #     if user.password == password:
+        #         login_user(user)
+        #         return redirect(url_for('index'))
+        #     else:
+        #         msg = "Wrong password. Please try again."
+        # else:
+        #     msg = "Unkkown user"
+        cursor = mysql.connect().cursor()
+        cursor.execute("SELECT * from employees where username='" + username + "' and password='" + password + "'")
+        data = cursor.fetchone()
+        if data is None:
+          msg = "Username or Password is wrong"
         else:
-            msg = "Unkkown user"
+          return redirect(url_for('index'))
 
     return render_template('layouts/auth-default.html',
                             content=render_template( 'pages/login.html', form=form, msg=msg ) )

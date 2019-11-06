@@ -1,13 +1,3 @@
-# -*- encoding: utf-8 -*-
-"""
-Argon Dashboard - coded in Flask
-
-Author  : AppSeed App Generator
-Design  : Creative-Tim.com
-License : MIT 
-Support : https://appseed.us/support 
-"""
-
 from flask_wtf          import FlaskForm
 from flask_wtf.file     import FileField, FileRequired
 from wtforms            import StringField, TextAreaField, SubmitField, PasswordField

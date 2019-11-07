@@ -1,0 +1,13 @@
+.fas {
+  font-size: 20px;
+  padding-right: 10px;
+}
+body {
+  font-size: 14px;
+}
+.table .thead-dark th {
+  font-size: 16px;
+}
+.table-flush tbody tr:last-child td {
+  font-size: 14px;
+}

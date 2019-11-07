@@ -15,6 +15,16 @@ app.config['MYSQL_DATABASE_PASSWORD'] = ''
 app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
+class Database:
+  def __init__(self):
+    self.con = mysql.connect()
+    self.cur = self.con.cursor()
+  def list_movietypes(self):
+    self.cur.execute("SELECT id, name from movietypes")
+    result = self.cur.fetchall()
+    return result
+
+
 
 @app.route('/sitemap.xml')
 def sitemap():
@@ -122,7 +132,7 @@ def login():
         #         msg = "Wrong password. Please try again."
         # else:
         #     msg = "Unkkown user"
-        cursor = mysql.connect().cursor()
+        
         cursor.execute("SELECT * from employees where username='" + username + "' and password='" + password + "'")
         data = cursor.fetchone()
         if data is None:
@@ -171,3 +181,13 @@ def index(path):
         
         return render_template('layouts/auth-default.html',
                                 content=render_template( 'pages/404.html' ) )
+@app.route('/movietypes.html')
+def movietypes():
+  def db_query():
+    db = Database()
+    emps = db.list_movietypes()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes.html'), result=res, content_type='application/json')

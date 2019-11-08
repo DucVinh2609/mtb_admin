@@ -11,3 +11,8 @@ class RegisterForm(FlaskForm):
 	username    = StringField  (u'Username'  , validators=[DataRequired()])
 	password    = PasswordField(u'Password'  , validators=[DataRequired()])
 	email       = StringField  (u'Email'     , validators=[DataRequired(), Email()])
+
+class AddMovietypesForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	name    = StringField  (u'Name'        , validators=[DataRequired()])
+

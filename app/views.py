@@ -6,7 +6,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm
 from flaskext.mysql import MySQL
 
 mysql = MySQL()
@@ -190,4 +190,35 @@ def movietypes():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/movietypes.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_movietypes')
+def add_user_view():
+  form = AddMovietypesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/new.html', form=form, msg=msg))
+
+@app.route('/movietypes/add', methods=['POST'])
+def addMovietypes():
+  try:
+    form = AddMovietypesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)        
+    if id and name and request.method == 'POST':
+      sql = "INSERT INTO movietypes (id, name) VALUES(%s, %s)"
+      data = (id, name,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movietypes')
+    else:
+      return redirect('/new_movietypes')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+  

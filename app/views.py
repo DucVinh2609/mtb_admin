@@ -181,7 +181,7 @@ def index(path):
         
         return render_template('layouts/auth-default.html',
                                 content=render_template( 'pages/404.html' ) )
-@app.route('/movietypes.html')
+@app.route('/movietypes')
 def movietypes():
   def db_query():
     db = Database()
@@ -190,4 +190,4 @@ def movietypes():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/movietypes.html'), result=res, content_type='application/json')
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes.html',result=res, content_type='application/json'))

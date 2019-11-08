@@ -170,16 +170,13 @@
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
-                {% if result %}
+
                 <tbody>
                   {% for row in result %}
                   <tr class="text-center">
-                    <td>
-                      {{ row.id }}
-                    </td>
-                    <td>
-                      {{ row.name }}
-                    </td>
+                    {% for d in row %}
+                      <td>{{ d }}</td>
+                    {% endfor %}
                     <td>
                       <a href="#" role="button" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-cogs"></i>
@@ -191,7 +188,7 @@
                   </tr>
                   {% endfor %}         
                 </tbody>
-                {% endif %}
+       
               </table>
             </div>
           </div>

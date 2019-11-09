@@ -6,7 +6,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm
 from flaskext.mysql import MySQL
 
 mysql = MySQL()
@@ -193,7 +193,7 @@ def movietypes():
   return render_template('layouts/default.html', content=render_template( 'pages/movietypes/index.html',result=res, content_type='application/json'))
 
 @app.route('/new_movietypes')
-def add_user_view():
+def add_movietypes():
   form = AddMovietypesForm(request.form)
   msg = None
   return render_template('layouts/default.html', content=render_template( 'pages/movietypes/new.html', form=form, msg=msg))
@@ -221,4 +221,37 @@ def addMovietypes():
   finally:
     cursor.close()
     conn.close()
-  
+
+@app.route('/movietypes/delete/<int:id>')
+def delete_movietypes(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM movietypes WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/movietypes')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_movietypes/<int:id>')
+def edit_movietypes(id):
+  try:
+    form = EditMovietypesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM movietypes WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/movietypes/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()

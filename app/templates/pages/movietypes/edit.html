@@ -1,4 +1,4 @@
-  <div class="main-content">
+<div class="main-content">
     <!-- Top navbar -->
     <nav class="navbar navbar-top navbar-expand-md navbar-dark" id="navbar-main">
       <div class="container-fluid">
@@ -154,74 +154,33 @@
     </div>
     <!-- Page content -->
     <div class="container-fluid mt--7">
-      <!-- Dark table -->
-      <div class="row mt-5">
-        <div class="col">
-          <div class="card bg-default shadow">
-            <div class="card-header bg-transparent border-0">
-              <h3 class="text-white mb-0">Movie types</h3>
-            </div>
-            <div class="table-responsive">
-              <div style="float: right; margin-right: 100px;">
-                <button onclick="window.location.href = '/new_movietypes'"; class="btn btn-primary my-4">Add Movie Types</button>
+        <div class="row mt-5">
+          <div class="col">
+            <div class="card bg-default shadow">
+              <div class="card-header bg-transparent border-0">
+                <h3 class="text-white mb-0">ADD content</h3>
               </div>
-              <table id="movietypes" class="table align-items-center table-dark table-flush">
-                <thead class="thead-dark text-center">
-                  <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Movie types</th>
-                    <th scope="col">Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {% for row in result %}
-                  <tr class="text-center">
-                    <td>
-                      {{ row[0] }}
-                    </td>
-                    <td>
-                      {{ row[1] }}
-                    </td>
-                    <td>
-                      <a href="#" role="button" aria-haspopup="true" aria-expanded="false" onclick="window.location.href ='/edit_movietypes/{{row[0]}}'";>
-                        <i class="fas fa-cogs"></i>
-                      </a>
-                      <a href="#" role="button" aria-haspopup="true" aria-expanded="false" data-toggle="modal" data-target="#modalDelete">
-                        <i class="fas fa-trash-alt"></i>
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}         
-                </tbody>
-       
-              </table>
+              <div class="card-body px-lg-5 py-lg-5">
+                  <form role="form" method="post" action="/movietypes/update">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                      {% for rows in row %}
+                      <div class="input-group input-group-alternative">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                        </div>
+                        {{ form.name(value=rows,class="form-control") }}
+                      </div>
+                      {% endfor %}  
+                    </div>
+                    <div class="text-center">
+                      <button type="submit" class="btn btn-primary my-4">Update</button>
+                    </div>
+                  </form>
+                </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Modal Delete-->
-      <div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h4 class="modal-title" id="exampleModalLongTitle">Delete Movie Types</h4>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              Are you sure you want to delete ?
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-              <button type="button" class="btn btn-primary" onclick="window.location.href ='/movietypes/delete/20'";>OK</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    
       {% include 'includes/footer.html' %}
       
     </div>

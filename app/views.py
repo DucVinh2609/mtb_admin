@@ -6,7 +6,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm
 from flaskext.mysql import MySQL
 
 mysql = MySQL()
@@ -15,6 +15,16 @@ app.config['MYSQL_DATABASE_PASSWORD'] = ''
 app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
+class Database:
+  def __init__(self):
+    self.con = mysql.connect()
+    self.cur = self.con.cursor()
+  def list_movietypes(self):
+    self.cur.execute("SELECT id, name from movietypes")
+    result = self.cur.fetchall()
+    return result
+
+
 
 @app.route('/sitemap.xml')
 def sitemap():
@@ -90,50 +100,24 @@ def register():
                             content=render_template( 'pages/register.html', form=form, msg=msg ) )
 
 # authenticate user
-@app.route('/login.html', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-
-    # Declare the login form
     form = LoginForm(request.form)
-
-    # Flask message injected into the page, in case of any errors
     msg = None
 
-    # check if both http method is POST and form is valid on submit
     if form.validate_on_submit():
+      username = request.form.get('username', '', type=str)
+      password = request.form.get('password', '', type=str) 
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute("SELECT * from employees where username='" + username + "' and password='" + password + "'")
+      data = cursor.fetchone()
+      if data is None:
+        msg = "Username or Password is wrong"
+      else:
+        return redirect('/')
+    return render_template('layouts/auth-default.html', content=render_template( 'pages/login.html', form=form, msg=msg ) )
 
-        # assign form data to variables
-        username = request.form.get('username', '', type=str)
-        password = request.form.get('password', '', type=str) 
-
-        # filter User out of database through username
-        # user = User.query.filter_by(user=username).first()
-        # if username == 'admin' and password== 'admin':
-        #   return redirect(url_for('index'))
-        # else:
-        #   msg = "Unkkown user"
-        # if user:
-            
-        #     #if bc.check_password_hash(user.password, password):
-        #     if user.password == password:
-        #         login_user(user)
-        #         return redirect(url_for('index'))
-        #     else:
-        #         msg = "Wrong password. Please try again."
-        # else:
-        #     msg = "Unkkown user"
-        cursor = mysql.connect().cursor()
-        cursor.execute("SELECT * from employees where username='" + username + "' and password='" + password + "'")
-        data = cursor.fetchone()
-        if data is None:
-          msg = "Username or Password is wrong"
-        else:
-          return redirect(url_for('index'))
-
-    return render_template('layouts/auth-default.html',
-                            content=render_template( 'pages/login.html', form=form, msg=msg ) )
-
-# Render the icons page
 @app.route('/icons.html')
 def icons():
 
@@ -171,3 +155,100 @@ def index(path):
         
         return render_template('layouts/auth-default.html',
                                 content=render_template( 'pages/404.html' ) )
+@app.route('/movietypes')
+def movietypes():
+  def db_query():
+    db = Database()
+    emps = db.list_movietypes()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_movietypes')
+def add_movietypes():
+  form = AddMovietypesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/new.html', form=form, msg=msg))
+
+@app.route('/movietypes/add', methods=['POST'])
+def addMovietypes():
+  try:
+    form = AddMovietypesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)        
+    if id and name and request.method == 'POST':
+      sql = "INSERT INTO movietypes (id, name) VALUES(%s, %s)"
+      data = (id, name,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movietypes')
+    else:
+      return redirect('/new_movietypes')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/movietypes/delete/<int:id>')
+def delete_movietypes(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM movietypes WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/movietypes')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_movietypes/<int:id>')
+def edit_movietypes(id):
+  try:
+    form = EditMovietypesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM movietypes WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/movietypes/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/movietypes/update', methods=['POST'])
+def update_user():
+  try:		
+    form = EditMovietypesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)
+    if name and id and request.method == 'POST':
+      sql = "UPDATE movietypes SET name=%s WHERE id=%s"
+      data = (name, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movietypes')
+    else:
+      return redirect('/edit_movietypes/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()

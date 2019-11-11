@@ -6,7 +6,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm
 from flaskext.mysql import MySQL
 
 mysql = MySQL()
@@ -23,7 +23,10 @@ class Database:
     self.cur.execute("SELECT id, name from movietypes")
     result = self.cur.fetchall()
     return result
-
+  def list_movieformats(self):
+    self.cur.execute("SELECT id, name from movieformats")
+    result = self.cur.fetchall()
+    return result
 
 
 @app.route('/sitemap.xml')
@@ -155,6 +158,9 @@ def index(path):
         
         return render_template('layouts/auth-default.html',
                                 content=render_template( 'pages/404.html' ) )
+
+# Movie Types
+
 @app.route('/movietypes')
 def movietypes():
   def db_query():
@@ -231,7 +237,7 @@ def edit_movietypes(id):
     conn.close()
 
 @app.route('/movietypes/update', methods=['POST'])
-def update_user():
+def update_movietypes():
   try:		
     form = EditMovietypesForm(request.form)
     msg = None
@@ -247,6 +253,106 @@ def update_user():
       return redirect('/movietypes')
     else:
       return redirect('/edit_movietypes/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Movie Formats
+
+@app.route('/movieformats')
+def movieformats():
+  def db_query():
+    db = Database()
+    emps = db.list_movieformats()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/movieformats/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_movieformats')
+def add_movieformats():
+  form = AddMovieFormatsForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/movieformats/new.html', form=form, msg=msg))
+
+@app.route('/movieformats/add', methods=['POST'])
+def addMovieformats():
+  try:
+    form = AddMovieFormatsForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)        
+    if id and name and request.method == 'POST':
+      sql = "INSERT INTO movieformats (id, name) VALUES(%s, %s)"
+      data = (id, name,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movieformats')
+    else:
+      return redirect('/new_movieformats')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/movieformats/delete/<int:id>')
+def delete_movieformats(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM movieformats WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/movieformats')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_movieformats/<int:id>')
+def edit_movieformats(id):
+  try:
+    form = EditMovieFormatsForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM movieformats WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/movieformats/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/movieformats/update', methods=['POST'])
+def update_movieformats():
+  try:		
+    form = EditMovieFormatsForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)
+    if name and id and request.method == 'POST':
+      sql = "UPDATE movieformats SET name=%s WHERE id=%s"
+      data = (name, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movieformats')
+    else:
+      return redirect('/edit_movieformats/%s',id)
   except Exception as e:
     print(e)
   finally:

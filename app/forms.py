@@ -20,3 +20,11 @@ class EditMovietypesForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
 	name    = StringField  (u'Name'        , validators=[DataRequired()])
 
+class AddMovieFormatsForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	name    = StringField  (u'Name'        , validators=[DataRequired()])
+
+class EditMovieFormatsForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	name    = StringField  (u'Name'        , validators=[DataRequired()])
+

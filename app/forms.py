@@ -28,3 +28,10 @@ class EditMovieFormatsForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
 	name    = StringField  (u'Name'        , validators=[DataRequired()])
 
+class AddRolesForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	role    = StringField  (u'Role'        , validators=[DataRequired()])
+
+class EditRolesForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	role    = StringField  (u'Role'        , validators=[DataRequired()])

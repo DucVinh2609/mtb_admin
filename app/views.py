@@ -1,14 +1,16 @@
-from flask               import render_template, request, url_for, redirect, send_from_directory
+from flask               import render_template, request, url_for, redirect, send_from_directory, jsonify
 from flask_login         import login_user, logout_user, current_user, login_required
 from werkzeug.exceptions import HTTPException, NotFound, abort
+from flask_restful import Resource, Api
 
 import os, logging 
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm
 from flaskext.mysql import MySQL
 
+api = Api(app)
 mysql = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = ''
@@ -25,6 +27,10 @@ class Database:
     return result
   def list_movieformats(self):
     self.cur.execute("SELECT id, name from movieformats")
+    result = self.cur.fetchall()
+    return result
+  def list_roles(self):
+    self.cur.execute("SELECT id, role_name from roles")
     result = self.cur.fetchall()
     return result
 
@@ -353,6 +359,160 @@ def update_movieformats():
       return redirect('/movieformats')
     else:
       return redirect('/edit_movieformats/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+
+# Roles
+
+@app.route('/roles')
+def roles():
+  def db_query():
+    db = Database()
+    emps = db.list_roles()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/roles/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_roles')
+def add_roles():
+  form = AddRolesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/roles/new.html', form=form, msg=msg))
+
+@app.route('/roles/add', methods=['POST'])
+def addRoles():
+  try:
+    form = AddRolesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    role = request.form.get('role', '', type=str)        
+    if id and role and request.method == 'POST':
+      sql = "INSERT INTO roles (id, role_name) VALUES(%s, %s)"
+      data = (id, role,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/roles')
+    else:
+      return redirect('/new_roles')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/roles/delete/<int:id>')
+def delete_roles(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM roles WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/roles')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_roles/<int:id>')
+def edit_roles(id):
+  try:
+    form = EditRolesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, role_name FROM roles WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/roles/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/roles/update', methods=['POST'])
+def update_roles():
+  try:		
+    form = EditRolesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    role = request.form.get('role', '', type=str)
+    if role and id and request.method == 'POST':
+      sql = "UPDATE roles SET role_name=%s WHERE id=%s"
+      data = (role, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/roles')
+    else:
+      return redirect('/edit_roles/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+  
+# API
+
+class MovieFormatsID(Resource):
+  def get(self):
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM movieformats")
+    return {'movieformats': [i[0] for i in cursor.fetchall()]}
+
+api.add_resource(MovieFormatsID, '/movieformatsid')
+
+def db_query():
+  db = Database()
+  emps = db.list_movietypes()
+  return emps
+
+@app.route("/api/movietypes", methods=["GET"])
+def apimovietypes():
+  def db_query():
+    db = Database()
+    emps = db.list_movietypes()
+    return emps
+  res = db_query()
+  return jsonify(res)
+
+@app.route('/api/movietypes', methods=['POST'])
+def apiaddMovietypes():
+  json={'input':  X_input}
+  data = request.get_json()
+  id = data[0]
+  name = data[1]
+  if id and name and request.method == 'POST':
+    sql = "INSERT INTO movietypes (id, name) VALUES(%s, %s)"
+    data = (id, name,)
+    cur = mysql.connection.cursor()
+    cur.execute(sql, data)
+    res = db_query()
+    return jsonify(res)
+
+@app.route("/api/movietypes/<int:id>", methods=["DELETE"])
+def apidelete_movietypes(id):
+  try:
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM movietypes WHERE id=%s", (id,))
+    conn.commit()
+    res = db_query()
+    return jsonify(res)
   except Exception as e:
     print(e)
   finally:

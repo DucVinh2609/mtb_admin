@@ -1,40 +1,26 @@
-# -*- encoding: utf-8 -*-
-"""
-Argon Dashboard - coded in Flask
+from flask import Flask, request
+from flask_restful import Resource, Api
+from json import dumps
+from flask_jsonpify import jsonify
+from flaskext.mysql import MySQL
 
-Author  : AppSeed App Generator
-Design  : Creative-Tim.com
-License : MIT 
-Support : https://appseed.us/support 
-"""
+app = Flask(__name__)
+api = Api(app)
+mysql = MySQL()
+app.config['MYSQL_DATABASE_USER'] = 'root'
+app.config['MYSQL_DATABASE_PASSWORD'] = ''
+app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
+app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+mysql.init_app(app)
+conn = mysql.connect()
 
-from flask_restful import Resource
-from flask_login   import current_user
+class Tracks(Resource):
+  def get(self):
+    query = conn.execute("SELECT id, name FROM movieformats;")
+    result = {'data': [dict(zip(tuple (query.keys()) ,i)) for i in query.cursor]}
+    return jsonify(result)
 
-from app.models    import Stats
+api.add_resource(Tracks, '/tracks')
 
-class ApiStats(Resource):
-
-    def get(self,segment):
-
-        if not current_user.is_authenticated:
-            return {'err': 'auth'}, 401
-
-        # See the model for details 
-        val = Stats( segment ).val 
-
-        if 'traffic' == segment:
-            return { segment : val }, 200
-
-        elif 'users' == segment:        
-            return { segment : val }, 200
-
-        elif 'sales' == segment:        
-            return { segment : val }, 200
-
-        elif 'perf' == segment:        
-            return { segment : val }, 200
-
-        else:
-            return {'err': 'unknown'}, 404
-            
+if __name__ == '__main__':
+  app.run()

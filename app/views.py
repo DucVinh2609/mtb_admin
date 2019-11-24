@@ -7,7 +7,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm
 from flaskext.mysql import MySQL
 
 api = Api(app)
@@ -33,6 +33,19 @@ class Database:
     self.cur.execute("SELECT id, role_name from roles")
     result = self.cur.fetchall()
     return result
+  def list_employees(self):
+    self.cur.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar from employees")
+    result = self.cur.fetchall()
+    return result
+  def list_countries(self):
+    self.cur.execute("SELECT country_code, country from countries")
+    result = self.cur.fetchall()
+    return result
+  def list_movies(self):
+    self.cur.execute("SELECT id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description from movies")
+    result = self.cur.fetchall()
+    return result
+
 
 
 @app.route('/sitemap.xml')
@@ -465,54 +478,324 @@ def update_roles():
   finally:
     cursor.close() 
     conn.close()
-  
-# API
 
-class MovieFormatsID(Resource):
-  def get(self):
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM movieformats")
-    return {'movieformats': [i[0] for i in cursor.fetchall()]}
+# Employees
 
-api.add_resource(MovieFormatsID, '/movieformatsid')
-
-def db_query():
-  db = Database()
-  emps = db.list_movietypes()
-  return emps
-
-@app.route("/api/movietypes", methods=["GET"])
-def apimovietypes():
+@app.route('/employees')
+def employees():
   def db_query():
     db = Database()
-    emps = db.list_movietypes()
+    emps = db.list_employees()
     return emps
   res = db_query()
-  return jsonify(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/employees/index.html',result=res, content_type='application/json'))
 
-@app.route('/api/movietypes', methods=['POST'])
-def apiaddMovietypes():
-  json={'input':  X_input}
-  data = request.get_json()
-  id = data[0]
-  name = data[1]
-  if id and name and request.method == 'POST':
-    sql = "INSERT INTO movietypes (id, name) VALUES(%s, %s)"
-    data = (id, name,)
-    cur = mysql.connection.cursor()
-    cur.execute(sql, data)
-    res = db_query()
-    return jsonify(res)
+@app.route('/new_employees')
+def add_employees():
+  form = AddEmployeesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/employees/new.html', form=form, msg=msg))
 
-@app.route("/api/movietypes/<int:id>", methods=["DELETE"])
-def apidelete_movietypes(id):
+@app.route('/employees/add', methods=['POST'])
+def addEmployees():
   try:
+    form = AddEmployeesForm(request.form)
+    msg = None
+    username = request.form.get('username', '', type=str)
+    password = request.form.get('password', '', type=str)
+    fullname = request.form.get('fullname', '', type=str)
+    birthday = request.form.get('birthday', '', type=str)      
+    address = request.form.get('address', '', type=str)  
+    phone = request.form.get('phone', '', type=str)
+    gender = request.form.get('gender', '', type=str)
+    role_id = request.form.get('role_id', '', type=int)
+    avatar = request.form.get('avatar', '', type=str)
+    if username and password and fullname and birthday and address and phone and gender and role_id and avatar and request.method == 'POST':
+      sql = "INSERT INTO employees (username, password, fullname, birthday, address, phone, gender, role_id, avatar) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+      data = (username, password, fullname, birthday, address, phone, gender, role_id, avatar,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/employees')
+    else:
+      return redirect('/new_employees')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/employees/delete/<string:username>')
+def delete_employees(username):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM employees WHERE username=%s", (username,))
+		conn.commit()
+		return redirect('/employees')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_employees/<string:username>')
+def edit_employees(username):
+  try:
+    form = EditEmployeesForm(request.form)
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM movietypes WHERE id=%s", (id,))
-    conn.commit()
-    res = db_query()
-    return jsonify(res)
+    cursor.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar from employees WHERE username=%s", username)
+    row = cursor.fetchone()
+    if row:
+      return render_template('layouts/default.html', content=render_template( 'pages/employees/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{username}'.format(username=username)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/employees/update', methods=['POST'])
+def update_employees():
+  try:		
+    form = EditEmployeesForm(request.form)
+    msg = None
+    username = request.form.get('username', '', type=str)
+    fullname = request.form.get('fullname', '', type=str)
+    birthday = request.form.get('birthday', '', type=str)      
+    address = request.form.get('address', '', type=str)  
+    phone = request.form.get('phone', '', type=str)
+    gender = request.form.get('gender', '', type=str)
+    role_id = request.form.get('role_id', '', type=int)
+    avatar = request.form.get('avatar', '', type=str)
+    if username and fullname and birthday and address and phone and gender and role_id and avatar and request.method == 'POST':
+      sql = "UPDATE employees SET fullname=%s,birthday=%s,address=%s,phone=%s,gender=%s,role_id=%s,avatar=%s WHERE username=%s"
+      data = (fullname, birthday, address, phone, gender, role_id, avatar, username,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/employees')
+    else:
+      return redirect('/edit_employees/%s',username)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Countries
+
+@app.route('/countries')
+def countries():
+  def db_query():
+    db = Database()
+    emps = db.list_countries()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/countries/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_countries')
+def add_countries():
+  form = AddCountriesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/countries/new.html', form=form, msg=msg))
+
+@app.route('/countries/add', methods=['POST'])
+def addCountries():
+  try:
+    form = AddCountriesForm(request.form)
+    msg = None
+    country_code = request.form.get('country_code', '', type=str)
+    country = request.form.get('country', '', type=str)        
+    if country_code and country and request.method == 'POST':
+      sql = "INSERT INTO countries (country_code, country) VALUES(%s, %s)"
+      data = (country_code, country,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/countries')
+    else:
+      return redirect('/new_countries')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/countries/delete/<string:country_code>')
+def delete_countries(country_code):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM countries WHERE country_code=%s", (country_code,))
+		conn.commit()
+		return redirect('/countries')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_countries/<string:country_code>')
+def edit_countries(country_code):
+  try:
+    form = EditCountriesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT country_code, country FROM countries WHERE country_code=%s", country_code)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/countries/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{country_code}'.format(country_code=country_code)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/countries/update', methods=['POST'])
+def update_countries():
+  try:		
+    form = EditCountriesForm(request.form)
+    msg = None
+    country_code = request.form.get('country_code', '', type=str)
+    country = request.form.get('country', '', type=str)
+    if country_code and country and request.method == 'POST':
+      sql = "UPDATE countries SET country=%s WHERE country_code=%s"
+      data = (country, country_code,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/countries')
+    else:
+      return redirect('/edit_countries/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Movies
+
+@app.route('/movies')
+def movies():
+  def db_query():
+    db = Database()
+    emps = db.list_movies()
+    return emps
+  res = db_query()
+  return render_template('layouts/default.html', content=render_template( 'pages/movies/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_movies')
+def add_movies():
+  form = AddMoviesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/movies/new.html', form=form, msg=msg))
+
+@app.route('/movies/add', methods=['POST'])
+def addMovies():
+  try:
+    form = AddMoviesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)
+    movieformat_id = request.form.get('movieformat_id', '', type=int)
+    movietype_id = request.form.get('movietype_id', '', type=int)      
+    duration = request.form.get('duration', '', type=int)  
+    country_code = request.form.get('country_code', '', type=str)
+    start_date = request.form.get('start_date', '', type=str)
+    end_date = request.form.get('end_date', '', type=str)
+    image = request.form.get('image', '', type=str)
+    note = request.form.get('note', '', type=str)
+    description = request.form.get('description', '', type=str)
+    if id and name and movieformat_id and movietype_id and duration and country_code and start_date and end_date and image and note and description and request.method == 'POST':
+      sql = "INSERT INTO movies (id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+      data = (id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movies')
+    else:
+      return redirect('/new_movies')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/movies/delete/<int:id>')
+def delete_movies(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM movies WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/movies')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_movies/<int:id>')
+def edit_movies(id):
+  try:
+    form = EditMoviesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description from movies WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      return render_template('layouts/default.html', content=render_template( 'pages/movies/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/movies/update', methods=['POST'])
+def update_movies():
+  try:		
+    form = EditMoviesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)
+    movieformat_id = request.form.get('movieformat_id', '', type=int)
+    movietype_id = request.form.get('movietype_id', '', type=int)      
+    duration = request.form.get('duration', '', type=int)  
+    country_code = request.form.get('country_code', '', type=str)
+    start_date = request.form.get('start_date', '', type=str)
+    end_date = request.form.get('end_date', '', type=str)
+    image = request.form.get('image', '', type=str)
+    note = request.form.get('note', '', type=str)
+    description = request.form.get('description', '', type=str)
+    if id and name and movieformat_id and movietype_id and duration and country_code and start_date and end_date and image and note and description and request.method == 'POST':
+      sql = "UPDATE movies SET name=%s,movieformat_id=%s,movietype_id=%s,duration=%s,country_code=%s,start_date=%s,end_date=%s,image=%s,note=%s,description=%s WHERE id=%s"
+      data = (name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/movies')
+    else:
+      return redirect('/edit_movies/%s',username)
   except Exception as e:
     print(e)
   finally:

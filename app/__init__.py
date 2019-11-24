@@ -23,8 +23,8 @@ lm = LoginManager(   ) # flask-loginmanager
 lm.init_app(app) # init the login manager
 
 from app import views, models
-from app.restapi.stats import ApiStats 
+from app.restapi.demo.main import MovieFormatsID 
 
 # Inject REST api 
-api.add_resource(ApiStats, '/api/stats/<string:segment>')
+api.add_resource(MovieFormatsID, '/api/demo')
 

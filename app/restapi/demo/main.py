@@ -15,7 +15,7 @@ app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
-class MovieFormats(Resource):
+class apiMovieFormats(Resource):
   def get(self):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -25,7 +25,7 @@ class MovieFormats(Resource):
 			resp.status_code = 200
 			return resp
 
-class AddMovieFormats(Resource):
+class apiAddMovieFormats(Resource):
   def post(self):
 			id = request.json['id']
 			name = request.json['name']
@@ -42,7 +42,7 @@ class AddMovieFormats(Resource):
 				resp.status_code = 200
 				return resp
 
-class ApiEditMovieFormats(Resource):
+class apiEditMovieFormats(Resource):
   def put(self, id):
 			_json = request.json
 			_name = _json['name']	
@@ -59,7 +59,7 @@ class ApiEditMovieFormats(Resource):
 				resp.status_code = 200
 				return resp
 
-class DeleteMovieFormats(Resource):
+class apiDeleteMovieFormats(Resource):
   def delete(self, id):
 			conn = mysql.connect()
 			cursor = conn.cursor()

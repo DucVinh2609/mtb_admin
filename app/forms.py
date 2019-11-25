@@ -91,3 +91,19 @@ class EditMoviesForm(FlaskForm):
 	image    = StringField  (u'Image'        , validators=[DataRequired()])
 	note    = StringField  (u'Note'        , validators=[DataRequired()])
 	description    = StringField  (u'Description'        , validators=[DataRequired()])
+
+class AddSeattypesForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	seattype_name    = StringField  (u'Seattype Name'        , validators=[DataRequired()])
+
+class EditSeattypesForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	seattype_name    = StringField  (u'Seattype Name'        , validators=[DataRequired()])
+
+class AddRoomformatsForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	name    = StringField  (u'Name'        , validators=[DataRequired()])
+
+class EditRoomformatsForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	name    = StringField  (u'Name'        , validators=[DataRequired()])

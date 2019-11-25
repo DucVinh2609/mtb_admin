@@ -14,7 +14,7 @@ app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
-class Movies(Resource):
+class apiMovies(Resource):
   def get(self):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)

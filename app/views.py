@@ -7,7 +7,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm, AddSeattypesForm, EditSeattypesForm, AddRoomformatsForm, EditRoomformatsForm
 from flaskext.mysql import MySQL
 
 api = Api(app)
@@ -45,7 +45,14 @@ class Database:
     self.cur.execute("SELECT id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description from movies")
     result = self.cur.fetchall()
     return result
-
+  def list_seattypes(self):
+    self.cur.execute("SELECT id, seattype_name from seattypes")
+    result = self.cur.fetchall()
+    return result
+  def list_roomformats(self):
+    self.cur.execute("SELECT id, name from roomformats")
+    result = self.cur.fetchall()
+    return result
 
 
 @app.route('/sitemap.xml')
@@ -796,6 +803,206 @@ def update_movies():
       return redirect('/movies')
     else:
       return redirect('/edit_movies/%s',username)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Seat Types
+
+@app.route('/seattypes')
+def seattypes():
+  def db_query():
+    db = Database()
+    emps = db.list_seattypes()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/seattypes/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_seattypes')
+def add_seattypes():
+  form = AddSeattypesForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/seattypes/new.html', form=form, msg=msg))
+
+@app.route('/seattypes/add', methods=['POST'])
+def addSeattypes():
+  try:
+    form = AddSeattypesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    seattype_name = request.form.get('seattype_name', '', type=str)        
+    if id and seattype_name and request.method == 'POST':
+      sql = "INSERT INTO seattypes (id, seattype_name) VALUES(%s, %s)"
+      data = (id, seattype_name,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/seattypes')
+    else:
+      return redirect('/new_seattypes')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/seattypes/delete/<int:id>')
+def delete_seattypes(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM seattypes WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/seattypes')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_seattypes/<int:id>')
+def edit_seattypes(id):
+  try:
+    form = EditSeattypesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, seattype_name FROM seattypes WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/seattypes/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/seattypes/update', methods=['POST'])
+def update_seattypes():
+  try:		
+    form = EditSeattypesForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    seattype_name = request.form.get('seattype_name', '', type=str)
+    if seattype_name and id and request.method == 'POST':
+      sql = "UPDATE seattypes SET seattype_name=%s WHERE id=%s"
+      data = (seattype_name, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/seattypes')
+    else:
+      return redirect('/edit_seattypes/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Room Formats
+
+@app.route('/roomformats')
+def roomformats():
+  def db_query():
+    db = Database()
+    emps = db.list_roomformats()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/roomformats/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_roomformats')
+def add_roomformats():
+  form = AddRoomformatsForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/roomformats/new.html', form=form, msg=msg))
+
+@app.route('/roomformats/add', methods=['POST'])
+def addRoomformats():
+  try:
+    form = AddRoomformatsForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)        
+    if id and name and request.method == 'POST':
+      sql = "INSERT INTO roomformats (id, name) VALUES(%s, %s)"
+      data = (id, name,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/roomformats')
+    else:
+      return redirect('/new_roomformats')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/roomformats/delete/<int:id>')
+def delete_roomformats(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM roomformats WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/roomformats')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_roomformats/<int:id>')
+def edit_roomformats(id):
+  try:
+    form = EditRoomformatsForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM roomformats WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/roomformats/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/roomformats/update', methods=['POST'])
+def update_roomformats():
+  try:		
+    form = EditRoomformatsForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    name = request.form.get('name', '', type=str)
+    if name and id and request.method == 'POST':
+      sql = "UPDATE roomformats SET name=%s WHERE id=%s"
+      data = (name, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/roomformats')
+    else:
+      return redirect('/edit_roomformats/%s',id)
   except Exception as e:
     print(e)
   finally:

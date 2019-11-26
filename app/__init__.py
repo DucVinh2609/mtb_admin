@@ -25,6 +25,7 @@ lm.init_app(app) # init the login manager
 from app import views, models
 from app.restapi.demo.main import apiMovieFormats, apiAddMovieFormats, apiEditMovieFormats, apiDeleteMovieFormats
 from app.restapi.api_movies import apiMovies
+from app.restapi.api_showtime_by_idmovie import apiShowtimeByIdmovie
 
 # Inject REST api 
 api.add_resource(apiMovieFormats, '/api/demo')
@@ -32,3 +33,4 @@ api.add_resource(apiAddMovieFormats, '/api/demo/add')
 api.add_resource(apiEditMovieFormats, '/api/demo/edit/<int:id>')
 api.add_resource(apiDeleteMovieFormats, '/api/demo/delete/<int:id>')
 api.add_resource(apiMovies, '/api/list_movies')
+api.add_resource(apiShowtimeByIdmovie, '/api/api_showtime_by_idmovie/<int:id>')

@@ -107,3 +107,28 @@ class AddRoomformatsForm(FlaskForm):
 class EditRoomformatsForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
 	name    = StringField  (u'Name'        , validators=[DataRequired()])
+
+class AddRoomsForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	room_name    = StringField  (u'Room name'        , validators=[DataRequired()])
+	roomformat_id = StringField  (u'Room name'        , validators=[DataRequired()])
+	status = StringField  (u'Room name'        , validators=[DataRequired()])
+	max_row_seat = StringField  (u'Room name'        , validators=[DataRequired()])
+	max_seat_row = StringField  (u'Room name'        , validators=[DataRequired()])
+	note = StringField  (u'Room name'        , validators=[DataRequired()])
+class EditRoomsForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	room_name    = StringField  (u'Room name'        , validators=[DataRequired()])
+	roomformat_id = StringField  (u'Room name'        , validators=[DataRequired()])
+	status = StringField  (u'Room name'        , validators=[DataRequired()])
+	max_row_seat = StringField  (u'Room name'        , validators=[DataRequired()])
+	max_seat_row = StringField  (u'Room name'        , validators=[DataRequired()])
+	note = StringField  (u'Room name'        , validators=[DataRequired()])
+
+class AddStatusForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	seat_condition    = StringField  (u'Seat condition'        , validators=[DataRequired()])
+
+class EditStatusForm(FlaskForm):
+	id    = StringField  (u'Id'        , validators=[DataRequired()])
+	seat_condition    = StringField  (u'Seat condition'        , validators=[DataRequired()])

@@ -7,7 +7,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm, AddSeattypesForm, EditSeattypesForm, AddRoomformatsForm, EditRoomformatsForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm, AddSeattypesForm, EditSeattypesForm, AddRoomformatsForm, EditRoomformatsForm, AddRoomsForm, EditRoomsForm, AddStatusForm, EditStatusForm
 from flaskext.mysql import MySQL
 
 api = Api(app)
@@ -51,6 +51,14 @@ class Database:
     return result
   def list_roomformats(self):
     self.cur.execute("SELECT id, name from roomformats")
+    result = self.cur.fetchall()
+    return result
+  def list_rooms(self):
+    self.cur.execute("SELECT id, room_name, roomformat_id, status, max_row_seat, max_seat_row, note from rooms")
+    result = self.cur.fetchall()
+    return result
+  def list_status(self):
+    self.cur.execute("SELECT id, seat_condition from status")
     result = self.cur.fetchall()
     return result
 
@@ -1003,6 +1011,216 @@ def update_roomformats():
       return redirect('/roomformats')
     else:
       return redirect('/edit_roomformats/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Rooms
+
+@app.route('/rooms')
+def rooms():
+  def db_query():
+    db = Database()
+    emps = db.list_rooms()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/rooms/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_rooms')
+def add_rooms():
+  form = AddRoomsForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/rooms/new.html', form=form, msg=msg))
+
+@app.route('/rooms/add', methods=['POST'])
+def addRooms():
+  try:
+    form = AddRoomsForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    room_name = request.form.get('room_name', '', type=str)
+    roomformat_id = request.form.get('roomformat_id', '', type=int)
+    status = request.form.get('status', '', type=str)      
+    max_row_seat = request.form.get('max_row_seat', '', type=int)
+    max_seat_row = request.form.get('max_seat_row', '', type=int)
+    note = request.form.get('note', '', type=str)
+    if id and room_name and roomformat_id and status and max_row_seat and max_seat_row and note and request.method == 'POST':
+      sql = "INSERT INTO rooms (id, room_name, roomformat_id, status, max_row_seat, max_seat_row, note) VALUES(%s, %s, %s, %s, %s, %s, %s )"
+      data = (id, room_name, roomformat_id, status, max_row_seat, max_seat_row, note,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/rooms')
+    else:
+      return redirect('/new_rooms')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/rooms/delete/<int:id>')
+def delete_rooms(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM rooms WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/rooms')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_rooms/<int:id>')
+def edit_rooms(id):
+  try:
+    form = EditRoomsForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, room_name, roomformat_id, status, max_row_seat, max_seat_row, note FROM rooms WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/rooms/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/rooms/update', methods=['POST'])
+def update_rooms():
+  try:		
+    form = EditRoomsForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    room_name = request.form.get('room_name', '', type=str)
+    roomformat_id = request.form.get('roomformat_id', '', type=int)
+    status = request.form.get('status', '', type=str)      
+    max_row_seat = request.form.get('max_row_seat', '', type=int)
+    max_seat_row = request.form.get('max_seat_row', '', type=int)
+    note = request.form.get('note', '', type=str)
+    if id and room_name and roomformat_id and status and max_row_seat and max_seat_row and note and request.method == 'POST':
+      sql = "UPDATE rooms SET room_name=%s, roomformat_id=%s, status=%s, max_row_seat=%s, max_seat_row=%s, note=%s WHERE id=%s"
+      data = (room_name, roomformat_id, status, max_row_seat, max_seat_row, note, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/rooms')
+    else:
+      return redirect('/edit_rooms/%s',id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+# Status
+
+@app.route('/status')
+def status():
+  def db_query():
+    db = Database()
+    emps = db.list_status()
+    return emps
+  res = db_query()
+  logger = logging.getLogger('example_logger')
+  logger.warning(res)
+  return render_template('layouts/default.html', content=render_template( 'pages/status/index.html',result=res, content_type='application/json'))
+
+@app.route('/new_status')
+def add_status():
+  form = AddStatusForm(request.form)
+  msg = None
+  return render_template('layouts/default.html', content=render_template( 'pages/status/new.html', form=form, msg=msg))
+
+@app.route('/status/add', methods=['POST'])
+def addStatus():
+  try:
+    form = AddStatusForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    seat_condition = request.form.get('seat_condition', '', type=str)        
+    if id and seat_condition and request.method == 'POST':
+      sql = "INSERT INTO status (id, seat_condition) VALUES(%s, %s)"
+      data = (id, seat_condition,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/status')
+    else:
+      return redirect('/new_status')
+  except Exception as e:
+    print(e)
+	
+  finally:
+    cursor.close()
+    conn.close()
+
+@app.route('/status/delete/<int:id>')
+def delete_status(id):
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor()
+		cursor.execute("DELETE FROM status WHERE id=%s", (id,))
+		conn.commit()
+		return redirect('/status')
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close() 
+		conn.close()
+
+@app.route('/edit_status/<int:id>')
+def edit_status(id):
+  try:
+    form = EditStatusForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, seat_condition FROM status WHERE id=%s", id)
+    row = cursor.fetchone()
+    if row:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row)  
+      return render_template('layouts/default.html', content=render_template( 'pages/status/edit.html', form=form, row=row))
+    else:
+      return 'Error loading #{id}'.format(id=id)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/status/update', methods=['POST'])
+def update_status():
+  try:		
+    form = EditStatusForm(request.form)
+    msg = None
+    id = request.form.get('id', '', type=int)
+    seat_condition = request.form.get('seat_condition', '', type=str)
+    if seat_condition and id and request.method == 'POST':
+      sql = "UPDATE status SET seat_condition=%s WHERE id=%s"
+      data = (seat_condition, id,)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/status')
+    else:
+      return redirect('/edit_status/%s',id)
   except Exception as e:
     print(e)
   finally:

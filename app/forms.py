@@ -1,6 +1,7 @@
 from flask_wtf          import FlaskForm
 from flask_wtf.file     import FileField, FileRequired
 from wtforms            import StringField, TextAreaField, SubmitField, PasswordField
+from wtforms.fields.html5 import DateField
 from wtforms.validators import InputRequired, Email, DataRequired
 
 class LoginForm(FlaskForm):
@@ -132,3 +133,4 @@ class AddStatusForm(FlaskForm):
 class EditStatusForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
 	seat_condition    = StringField  (u'Seat condition'        , validators=[DataRequired()])
+

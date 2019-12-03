@@ -2,6 +2,12 @@ from flask               import render_template, request, url_for, redirect, sen
 from flask_login         import login_user, logout_user, current_user, login_required
 from werkzeug.exceptions import HTTPException, NotFound, abort
 from flask_restful import Resource, Api
+from datetime import date, timedelta, datetime
+from time import mktime
+from dateutil.parser import parse
+from flask_wtf import Form
+from wtforms.fields.html5 import DateField
+from wtforms import StringField
 
 import os, logging 
 
@@ -16,7 +22,12 @@ app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = ''
 app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+# app.config['MYSQL_DATABASE_USER'] = 'ducvinh26091997'
+# app.config['MYSQL_DATABASE_PASSWORD'] = 'ducvinh26091997'
+# app.config['MYSQL_DATABASE_DB'] = 'mtb_admin'
+# app.config['MYSQL_DATABASE_HOST'] = 'db4free.net'
 mysql.init_app(app)
+
 class Database:
   def __init__(self):
     self.con = mysql.connect()
@@ -59,6 +70,10 @@ class Database:
     return result
   def list_status(self):
     self.cur.execute("SELECT id, seat_condition from status")
+    result = self.cur.fetchall()
+    return result
+  def list_showings(self):
+    self.cur.execute("SELECT room_id, time, showtime, showings.id, movie_id, movies.name, duration from showings INNER JOIN movies ON showings.movie_id = movies.id ORDER BY time ASC")
     result = self.cur.fetchall()
     return result
 
@@ -1226,3 +1241,104 @@ def update_status():
   finally:
     cursor.close() 
     conn.close()
+
+# Showings (Xuất chiếu)
+class ExampleForm(Form):
+    dt = DateField('DatePicker', format='%Y-%m-%d')
+    id = StringField  ('Id')
+
+@app.route('/showings', methods=['POST', 'GET'])
+def showings():
+  try:
+    form = ExampleForm()
+    id = request.form.get('id', '', type=int)
+    tvalue= str(datetime.today().strftime("%Y-%m-%d"))
+    if form.validate_on_submit():
+      tvalue = str(form.dt.data.strftime('%Y-%m-%d'))
+    def db_query():
+      db = Database()
+      emps = db.list_showings()
+      return emps
+    res = db_query()
+    demo = datetime.strptime(tvalue, '%Y-%m-%d').date()
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, room_name from rooms")
+    row = cursor.fetchall()
+    cursor1 = conn.cursor()
+    cursor1.execute("SELECT DISTINCT showtime from showings")
+    row1 = cursor1.fetchall()
+    cursor3 = conn.cursor()
+    cursor3.execute("SELECT id, name from movies")
+    row3 = cursor3.fetchall()
+    if id:
+      cursor2 = conn.cursor()
+      cursor2.execute("SELECT name, time from showings INNER JOIN movies ON showings.movie_id = movies.id WHERE id=%s",id)
+      row2 = cursor2.fetchone()
+      logger = logging.getLogger('example_logger')
+      logger.warning(row2)
+    
+    if row and row1:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row3)
+      
+      for i in range(len(row1)):
+        logger.warning(row1[i][0])
+      for i in range(len(res)):
+        logger.warning(res[i][2])
+      return render_template('layouts/default.html', content=render_template( 'pages/showings/index.html', row=row, row1=row1, row3=row3, res=res, demo=demo, form=form))
+    else:
+      return 'Error loading '
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/showings/update/<string:id>/<string:movie_id>/<string:time>')
+def update_showings(id, movie_id, time):
+  try:
+    time_obj = datetime.strptime(time, '%H:%M:%S').time()
+    id_obj = int(id)
+    movie_id_obj = int(movie_id)
+    sql = "UPDATE showings SET movie_id=%s, time=%s WHERE id=%s"
+    data = (movie_id_obj, time_obj, id_obj,)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute(sql, data)
+    conn.commit()
+    return redirect('/showings')
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/showings/add/<string:id>/<string:movie_id>/<string:time>/<string:date>')
+def addShowings(id, movie_id, time, date):
+  try:
+    date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+    time_obj = datetime.strptime(time, '%H:%M:%S').time()
+    id_obj = int(id)
+    movie_id_obj = int(movie_id)
+    sql = "INSERT INTO showings (movie_id, room_id, showtime, time) VALUES(%s, %s, %s, %s )"
+    data = (movie_id_obj, id_obj, date_obj, time_obj,)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute(sql, data)
+    conn.commit()
+    return redirect('/showings')
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/showings/delete/<string:id>')
+def delete_showings(id):
+    id_obj = int(id)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM showings WHERE id=%s", (id,))
+    conn.commit()
+    return redirect('/showings')

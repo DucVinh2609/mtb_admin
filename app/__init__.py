@@ -4,16 +4,15 @@ from flask            import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login      import LoginManager
 from flask_bcrypt     import Bcrypt
-
+from flask_ckeditor   import CKEditor
 from flask_restful     import Api
 
 # Grabs the folder where the script runs.
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
-
+ckeditor = CKEditor(app)
 api = Api(app) # flask_restful
-
 app.config.from_object('app.configuration.Config')
 
 db = SQLAlchemy  (app) # flask-sqlalchemy
@@ -27,6 +26,10 @@ from app.restapi.demo.main import apiMovieFormats, apiAddMovieFormats, apiEditMo
 from app.restapi.api_movies import apiMovies, apiMovieDetail, apiMovieDetailDate, apiMovieDetailTime
 from app.restapi.api_showtime_by_idmovie import apiShowtimeByIdmovie
 from app.restapi.apiMovieBest import apiBestMovies
+from app.restapi.api_login import apiLogin
+from app.restapi.api_max_row_seat import apiMaxRowSeat
+from app.restapi.api_seat_was_booked import apiSeatWasBooked
+from app.restapi.api_tickets import apiAddTickets
 # from app.restapi.apiMovieDetail import apiMovieDetail
 
 # Inject REST api 
@@ -40,3 +43,7 @@ api.add_resource(apiBestMovies, '/api/best_movies')
 api.add_resource(apiMovieDetail, '/api/movie_detail/<int:id>')
 api.add_resource(apiMovieDetailDate, '/api/movie_detail_date/<int:id>')
 api.add_resource(apiMovieDetailTime, '/api/movie_detail_time/<int:id>')
+api.add_resource(apiLogin, '/api/login/<string:username>/<string:password>')
+api.add_resource(apiMaxRowSeat, '/api/max_row_seat/<int:id>')
+api.add_resource(apiSeatWasBooked, '/api/seat_was_booked/<int:id>')
+api.add_resource(apiAddTickets, '/api/add_tickets')

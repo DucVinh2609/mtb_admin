@@ -24,3 +24,9 @@ body {
   text-align: right;
   border-top: 1px solid #e5e5e5;
 }
+.cke_chrome {
+  width: 97%;
+}
+.cke_reset {
+  width: 100%;
+}

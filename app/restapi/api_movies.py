@@ -1,9 +1,12 @@
 import pymysql
+import json
 from app import app
 from flask import jsonify
 from flask import flash, request
 from flask_restful import Resource, Api
 from flaskext.mysql import MySQL
+from datetime import date, timedelta
+from time import mktime
 
 mysql = MySQL()
  
@@ -12,7 +15,12 @@ app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = ''
 app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+# app.config['MYSQL_DATABASE_USER'] = 'ducvinh26091997'
+# app.config['MYSQL_DATABASE_PASSWORD'] = 'ducvinh26091997'
+# app.config['MYSQL_DATABASE_DB'] = 'mtb_admin'
+# app.config['MYSQL_DATABASE_HOST'] = 'db4free.net'
 mysql.init_app(app)
+
 
 class apiMovies(Resource):
   def get(self):
@@ -52,7 +60,7 @@ class apiMovieDetailTime(Resource):
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
 			# sql=""
 			# data=(id)
-			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime from showings WHERE movie_id=%s",id)
+			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s",id)
 			rows = cursor.fetchall()
 			resp = jsonify(rows)
 			resp.status_code = 200

@@ -1,0 +1,238 @@
+<div class="main-content">
+  <!-- Top navbar -->
+  {% include 'includes/nav-top-right.html' %}
+
+  <!-- Header -->
+  {% include 'includes/top-stats.html' %}
+
+  <!-- Page content -->
+  <div class="container-fluid mt--1">
+    <div class="row mt-5">
+      <div class="col">
+        
+        <form role="form" method="post" action="/showings">
+          <span class="h2 font-weight-bold mb-0">Date: </span>
+          {{ form.dt(class='datepicker', value=demo) }}
+          {{ form.hidden_tag() }}
+          <input type="submit" value="Search" />
+          <hr>
+
+          <table style="border: 2px solid wheat; width: 80%;">
+            <tbody>
+              {% for rooms in row %}
+              <tr style="border: 1px solid wheat; height: auto;">
+                <td style="border-right: 1px solid wheat; width: 20%; padding: 8px;">
+                  <span class="h2 font-weight-bold mb-0">{{ rooms[1] }}</span>
+                </td>
+                
+                <td style="border-right: 1px solid wheat; padding: 8px; width: 67%;">
+                  {% for row in res %}
+                    {% if row[2] == demo %}
+                      {% if row[0]==rooms[0] %}
+                        <!-- <a href="#" onclick="{{ url_for('showings') }}" style="padding: 8px;" role="button" aria-haspopup="true" aria-expanded="false" data-toggle="modal" data-target="#modalDetails" data-whatever="demo{{ row[3] }}"> -->
+                        <a href="#" style="padding: 8px;" role="button" data-toggle="modal" data-target="#demo{{ row[3] }}" data-whatever="{{ row[3] }}" data-backdrop="static" data-keyboard="false">  
+                          <label class="form-control" style="background-color: aqua; cursor: pointer; width:fit-content; display: initial;">{{ row[1] }}</label>
+                        </a>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %} 
+                </td>
+
+                <td style="padding: 10px;">
+                  <a href="#" data-toggle="modal" data-target="#add{{ rooms[0] }}" data-whatever="{{ rooms[0] }}">
+                    <button class="btn btn-primary my-4">Add Showings</button>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}        
+            </tbody>
+          </table>
+          
+          
+        </form>
+    </div>
+
+    {% for row in res %}
+
+    <!-- Modal Showings Details-->
+    <div class="modal fade" id="demo{{ row[3] }}" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="exampleModalLongTitle">Showings Details</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="disable()">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div>
+              <label style="width: 20%;">Movies: </label>
+              <select class="form-control" id="listMovie{{row[3]}}" name="listMovie" form="listMovie" disabled>
+                {% for movie in row3 %}
+                  {% if movie[1] == row[5] %}
+                    <option value="{{movie[0]}}" selected>{{movie[1]}}</option>
+                  {% endif %}
+                  {% if movie[1] != row[5] %}
+                    <option value="{{movie[0]}}">{{movie[1]}}</option>
+                  {% endif %}
+                {% endfor %} 
+              </select>
+              <br>
+              <label style="width: 20%;">Times:  </label>
+              <input class="form-control" type="text" id="time_showings{{row[3]}}" name="time" value="{{row[1]}}" disabled>
+              <input class="form-control" type="hidden" id="id_showings{{row[3]}}" name="id_showings" value="{{row[3]}}">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="disable()">Close</button>
+            <button type="button" class="btn btn-primary" id="edit" onclick="enable()">Edit</button>
+            <button type="button" class="btn btn-primary" id="update" onclick="update('{{row[3]}}')" hidden>Update</button>
+            <button type="button" class="btn btn-danger" id="delete" onclick="deleteShowings('{{row[3]}}')">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %} 
+    {% for rooms in row %}
+    <!-- Modal Add Showings -->
+    <div class="modal fade" id="add{{ rooms[0] }}" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title" id="exampleModalLongTitle">Add Showings</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div>
+              <input class="form-control" type="hidden" id="date" name="date" value={{demo}}>
+              <select class="form-control" id="vinh{{ rooms[0] }}" name="vinh" form="vinh" style="display: none">
+                {% for row in res %}
+                  {% if row[2] == demo %}
+                    {% if row[0]== rooms[0] %}
+                      {% if row[0] != null%}
+                        <option value="{{row[-1]}}">{{row[-1]}}</option>
+                      {% else %}
+                        <option value="null"></option>
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %}
+              </select>
+              <select class="form-control" id="showing{{ rooms[0] }}" name="showing" form="showing" style="display: none">
+                {% for row in res %}
+                  {% if row[2] == demo %}
+                    {% if row[0]== rooms[0] %}
+                      {% if row[0] != null%}
+                        <option value="{{row[1]}}">{{row[1]}}</option>
+                      {% else %}
+                        <option value="null"></option>
+                      {% endif %}
+                    {% endif %}
+                  {% endif %}
+                {% endfor %} 
+            </select>
+              <label style="width: 20%;">Movies: </label>
+              <select class="form-control" id="listMovieAdd{{ rooms[0] }}" name="listMovieAdd" form="listMovieAdd">
+                {% for movie in row3 %}
+                  <option value="{{movie[0]}}">{{movie[1]}}</option>
+                {% endfor %} 
+              </select>
+              <br>
+              <label style="width: 20%;">Times:  </label>
+              <input class="form-control" type="text" id="time_showings_add{{ rooms[0] }}" name="time_showings_add">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="add" onclick="addShowings('{{rooms[0]}}')">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %} 
+
+    <script>
+      
+      // $(document).ready(function(){
+      //     $('#add').on('show.bs.modal', function (event) {
+      //       var button = $(event.relatedTarget);
+      //       var roomsId = button.data('whatever');
+      //       var date = $('input[id="date"]').val();
+      //       var lastelement = document.getElementById("vinh").length;
+      //       var v = document.getElementById("vinh");
+      //       var v_id = v.options[v.tabIndex = lastelement-1].value;
+      //       $('.modal-footer #roomsid').click(function(){
+      //         var time = $('input[id="time_showings_add"]').val();
+      //         var e = document.getElementById("listMovieAdd");
+      //         var movie_id = e.options[e.selectedIndex].value;
+      //         console.log(v_id);
+      //         window.location.href ='/showings/add/'+roomsId+'/'+movie_id+'/'+time+'/'+date;
+      //       });
+      //     })
+      // })
+      function enable(){
+        $('input[name="time"]').removeAttr('disabled');
+        $('select[name="listMovie"]').removeAttr('disabled');
+        $('button[id="update"]').removeAttr('hidden');
+        $('button[id="update"]').show();
+        $('button[id="edit"]').hide();
+      }
+      function disable(){
+        $('input[name="time"]').prop('disabled', true);
+        $('select[name="listMovie"]').prop('disabled', true);
+        $('button[id="edit"]').show();
+        $('button[id="update"]').hide();
+      }
+      function update(id){
+        var time = $('input[id="time_showings'+id+'"]').val();
+        var e = document.getElementById("listMovie"+id);
+        var movie_id = e.options[e.selectedIndex].value;
+        window.location.href ='/showings/update/'+id+'/'+movie_id+'/'+time;
+      }
+      function deleteShowings(id){
+        window.location.href ='/showings/delete/'+id;
+      }
+      function addShowings(id){
+        var roomsId = id;
+        var date = $('input[id="date"]').val();
+        var lastelement = document.getElementById("vinh"+id).length;
+        var lastshowing = document.getElementById("showing"+id).length;
+        var v = document.getElementById("vinh"+id);
+        var v_time = v.options[v.tabIndex = lastelement-1].value;
+        var s = document.getElementById("showing"+id);
+        var s_showing = s.options[s.tabIndex = lastshowing-1].value;
+        var time = $('input[id="time_showings_add'+id+'"]').val();
+        var e = document.getElementById("listMovieAdd"+id);
+        var movie_id = e.options[e.selectedIndex].value;
+        var a = Date.parse(date+"T"+s_showing);
+        var b = Date.parse(date+"T"+v_time);
+        var c = Date.parse(date+"T"+time);
+        var d = Date.parse(date+"T00:00:00");
+        console.log(s_showing)
+        if (s_showing=="null") {
+          window.location.href ='/showings/add/'+roomsId+'/'+movie_id+'/'+time+'/'+date;
+        }
+        else {
+          if(s_showing.length < 8) {
+            a = Date.parse(date+"T0"+s_showing);
+          }
+
+          if (c-d >= a-d + b-d + 1800000) {
+            window.location.href ='/showings/add/'+roomsId+'/'+movie_id+'/'+time+'/'+date;
+          } else {
+            alert("Xuất chiếu không hợp lệ để thêm vào\r\n"+
+                  "Xuất chiếu trước đó là: "+s_showing+"\r\n"+
+                  "Thời gian chiếu của xuất chiếu trên là: "+v_time+"\r\n"+
+                  "Vậy xuất chiếu được thêm hợp lệ là sau xuất chiếu trên \r\n(Tính thời gian của xuất chiếu đó cộng thêm 30 phút)");
+          }
+        }
+        
+      }
+    </script>
+  
+
+    
+  </div>
+</div>

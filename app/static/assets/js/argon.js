@@ -916,7 +916,7 @@ var OrdersChart = (function() {
 	// Variables
 	//
 
-	var $chart = $('#chart-orders');
+	var $chart = $('#chartticket');
 	var $ordersSelect = $('[name="ordersSelect"]');
 
 
@@ -964,7 +964,6 @@ var OrdersChart = (function() {
 			data: {
 				labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 				datasets: [{
-					label: 'Sales',
 					data: [25, 20, 30, 22, 17, 29]
 				}]
 			}

@@ -1,7 +1,14 @@
-from flask               import render_template, request, url_for, redirect, send_from_directory, jsonify
+from flask               import render_template, request, url_for, redirect, send_from_directory, jsonify, session
 from flask_login         import login_user, logout_user, current_user, login_required
 from werkzeug.exceptions import HTTPException, NotFound, abort
 from flask_restful import Resource, Api
+from datetime import date, timedelta, datetime
+from time import mktime
+from dateutil.parser import parse
+from flask_wtf import Form
+from wtforms.fields.html5 import DateField
+from wtforms import StringField
+from werkzeug.utils import secure_filename
 
 import os, logging 
 
@@ -10,13 +17,22 @@ from app.models import User
 from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm, AddSeattypesForm, EditSeattypesForm, AddRoomformatsForm, EditRoomformatsForm, AddRoomsForm, EditRoomsForm, AddStatusForm, EditStatusForm
 from flaskext.mysql import MySQL
 
+UPLOAD_FOLDER = 'D:/python/heroku/mtb-admin/app/static/assets/img/uploads'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 api = Api(app)
 mysql = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = ''
 app.config['MYSQL_DATABASE_DB'] = 'mtb_db'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+# app.config['MYSQL_DATABASE_USER'] = 'ducvinh26091997'
+# app.config['MYSQL_DATABASE_PASSWORD'] = 'ducvinh26091997'
+# app.config['MYSQL_DATABASE_DB'] = 'mtb_admin'
+# app.config['MYSQL_DATABASE_HOST'] = 'db4free.net'
 mysql.init_app(app)
+
 class Database:
   def __init__(self):
     self.con = mysql.connect()
@@ -61,6 +77,10 @@ class Database:
     self.cur.execute("SELECT id, seat_condition from status")
     result = self.cur.fetchall()
     return result
+  def list_showings(self):
+    self.cur.execute("SELECT room_id, time, showtime, showings.id, movie_id, movies.name, duration from showings INNER JOIN movies ON showings.movie_id = movies.id ORDER BY time ASC")
+    result = self.cur.fetchall()
+    return result
 
 
 @app.route('/sitemap.xml')
@@ -84,10 +104,13 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # authenticate user
-@app.route('/logout.html')
+@app.route('/logout')
 def logout():
-    logout_user()
-    return redirect(url_for('index'))
+    session.pop('loggedin', None)
+    session.pop('username', None)
+    session.pop('avatar', None)
+    # Redirect to login page
+    return redirect(url_for('login'))
 
 # register user
 @app.route('/register.html', methods=['GET', 'POST'])
@@ -148,12 +171,27 @@ def login():
       conn = mysql.connect()
       cursor = conn.cursor()
       cursor.execute("SELECT * from employees where username='" + username + "' and password='" + password + "'")
-      data = cursor.fetchone()
-      if data is None:
-        msg = "Username or Password is wrong"
+      account = cursor.fetchone()
+      if account:
+        session['loggedin'] = True
+        session['username'] = account[0]
+        session['avatar'] = account[8]
+        return redirect('/home')
       else:
-        return redirect('/')
+        msg = "Username or Password is wrong"
     return render_template('layouts/auth-default.html', content=render_template( 'pages/login.html', form=form, msg=msg ) )
+
+# Profile
+@app.route('/profile')
+def profile():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM employees WHERE username = %s', [session['username']])
+        account = cursor.fetchone()
+        return render_template('layouts/default.html', content=render_template( 'pages/profile.html', account=account, username=session['username'], avatar=session['avatar'] ) )
+    return redirect(url_for('login'))
 
 @app.route('/icons.html')
 def icons():
@@ -161,12 +199,6 @@ def icons():
     return render_template('layouts/default.html',
                             content=render_template( 'pages/icons.html') )
 
-# Render the profile page
-@app.route('/profile.html')
-def profile():
-
-    return render_template('layouts/default.html',
-                            content=render_template( 'pages/profile.html') )
 
 
 # Render the tables page
@@ -177,17 +209,54 @@ def tables():
                             content=render_template( 'pages/tables.html') )
 
 # App main route + generic routing
-@app.route('/', defaults={'path': 'index.html'})
+@app.route('/home')
+def home():
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM employees WHERE username = %s', [session['username']])
+        account = cursor.fetchone()
+        cursor1 = conn.cursor()
+        cursor1.execute('SELECT * FROM members ORDER BY create_at DESC LIMIT 5')
+        member = cursor1.fetchall()
+        cursor2 = conn.cursor()
+        cursor2.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=7')
+        jul = cursor2.fetchone()
+        cursor3 = conn.cursor()
+        cursor3.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=8')
+        aug = cursor3.fetchone()
+        cursor4 = conn.cursor()
+        cursor4.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=9')
+        sep = cursor4.fetchone()
+        cursor5 = conn.cursor()
+        cursor5.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=10')
+        oct = cursor5.fetchone()
+        cursor6 = conn.cursor()
+        cursor6.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=11')
+        nov = cursor6.fetchone()
+        cursor7 = conn.cursor()
+        cursor7.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=12')
+        dec = cursor7.fetchone()
+        return render_template('layouts/default.html', content=render_template( 'pages/index.html', account=account, jul=jul, aug=aug, sep=sep, oct=oct, nov=nov, dec=dec, member=member, username=session['username'], avatar=session['avatar']))
+    # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
 @app.route('/<path>')
 def index(path):
 
     content = None
 
     try:
-
-        # try to match the pages defined in -> pages/<input file>
-        return render_template('layouts/default.html',
+      if 'loggedin' in session:
+          conn = mysql.connect()
+          cursor = conn.cursor()
+          cursor.execute('SELECT * FROM employees WHERE username = %s', [session['username']])
+          account = cursor.fetchone()
+          return render_template('layouts/default.html', account=account,
                                 content=render_template( 'pages/'+path) )
+      # User is not loggedin redirect to login page
+      return redirect(url_for('login'))
     except:
         
         return render_template('layouts/auth-default.html',
@@ -204,13 +273,13 @@ def movietypes():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_movietypes')
 def add_movietypes():
   form = AddMovietypesForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/movietypes/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/movietypes/add', methods=['POST'])
 def addMovietypes():
@@ -261,7 +330,7 @@ def edit_movietypes(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/movietypes/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/movietypes/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -304,13 +373,13 @@ def movieformats():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/movieformats/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/movieformats/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_movieformats')
 def add_movieformats():
   form = AddMovieFormatsForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/movieformats/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/movieformats/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/movieformats/add', methods=['POST'])
 def addMovieformats():
@@ -361,7 +430,7 @@ def edit_movieformats(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/movieformats/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/movieformats/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -405,13 +474,13 @@ def roles():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/roles/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/roles/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_roles')
 def add_roles():
   form = AddRolesForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/roles/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/roles/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/roles/add', methods=['POST'])
 def addRoles():
@@ -462,7 +531,7 @@ def edit_roles(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/roles/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/roles/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -503,13 +572,13 @@ def employees():
     emps = db.list_employees()
     return emps
   res = db_query()
-  return render_template('layouts/default.html', content=render_template( 'pages/employees/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/employees/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_employees')
 def add_employees():
   form = AddEmployeesForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/employees/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/employees/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/employees/add', methods=['POST'])
 def addEmployees():
@@ -565,7 +634,7 @@ def edit_employees(username):
     cursor.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar from employees WHERE username=%s", username)
     row = cursor.fetchone()
     if row:
-      return render_template('layouts/default.html', content=render_template( 'pages/employees/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/employees/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{username}'.format(username=username)
   except Exception as e:
@@ -614,13 +683,13 @@ def countries():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/countries/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/countries/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_countries')
 def add_countries():
   form = AddCountriesForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/countries/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/countries/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/countries/add', methods=['POST'])
 def addCountries():
@@ -671,7 +740,7 @@ def edit_countries(country_code):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/countries/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/countries/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{country_code}'.format(country_code=country_code)
   except Exception as e:
@@ -703,6 +772,11 @@ def update_countries():
     cursor.close() 
     conn.close()
 
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 # Movies
 
 @app.route('/movies')
@@ -712,38 +786,67 @@ def movies():
     emps = db.list_movies()
     return emps
   res = db_query()
-  return render_template('layouts/default.html', content=render_template( 'pages/movies/index.html',result=res, content_type='application/json'))
+  conn = mysql.connect()
+  cursor = conn.cursor()
+  cursor.execute("SELECT id, name from movieformats")
+  movieformat = cursor.fetchall()
+  cursor1 = conn.cursor()
+  cursor1.execute("SELECT id, name from movietypes")
+  movietype = cursor1.fetchall()
+  cursor2 = conn.cursor()
+  cursor2.execute("SELECT country_code, country from countries")
+  country = cursor2.fetchall()
+  return render_template('layouts/default.html', content=render_template( 'pages/movies/index.html',result=res, movieformat=movieformat, movietype=movietype, country=country, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_movies')
 def add_movies():
   form = AddMoviesForm(request.form)
+  form1 = ExampleForm()
+  tvalue= str(datetime.today().strftime("%Y-%m-%d"))
+  today = datetime.strptime(tvalue, '%Y-%m-%d').date()
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/movies/new.html', form=form, msg=msg))
+  conn = mysql.connect()
+  cursor = conn.cursor()
+  cursor.execute("SELECT id, name from movieformats")
+  movieformat = cursor.fetchall()
+  cursor1 = conn.cursor()
+  cursor1.execute("SELECT id, name from movietypes")
+  movietype = cursor1.fetchall()
+  cursor2 = conn.cursor()
+  cursor2.execute("SELECT country_code, country from countries")
+  country = cursor2.fetchall()
+  return render_template('layouts/default.html', content=render_template( 'pages/movies/new.html', today=today, form=form, form1=form1, movieformat=movieformat, movietype=movietype, country=country, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/movies/add', methods=['POST'])
 def addMovies():
   try:
+    form1 = ExampleForm()
+    start_date = str(form1.startDate.data.strftime('%Y-%m-%d'))
+    end_date = str(form1.endDate.data.strftime('%Y-%m-%d'))
+    movieformat_id = request.form.get('movieformat_id')
+    movietype_id = request.form.get('movietype_id')
+    country_code = request.form.get('country_code')
     form = AddMoviesForm(request.form)
     msg = None
-    id = request.form.get('id', '', type=int)
-    name = request.form.get('name', '', type=str)
-    movieformat_id = request.form.get('movieformat_id', '', type=int)
-    movietype_id = request.form.get('movietype_id', '', type=int)      
-    duration = request.form.get('duration', '', type=int)  
-    country_code = request.form.get('country_code', '', type=str)
-    start_date = request.form.get('start_date', '', type=str)
-    end_date = request.form.get('end_date', '', type=str)
-    image = request.form.get('image', '', type=str)
+    name = request.form.get('name', '', type=str)   
+    duration = request.form.get('duration', '', type=str)  
+    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     note = request.form.get('note', '', type=str)
-    description = request.form.get('description', '', type=str)
-    if id and name and movieformat_id and movietype_id and duration and country_code and start_date and end_date and image and note and description and request.method == 'POST':
-      sql = "INSERT INTO movies (id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-      data = (id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description,)
-      conn = mysql.connect()
-      cursor = conn.cursor()
-      cursor.execute(sql, data)
-      conn.commit()
-      return redirect('/movies')
+    description = request.form.get('description')
+    if request.method == 'POST':
+      file = request.files['image']
+      if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        image = "/static/assets/img/uploads/"+filename
+        sql = "INSERT INTO movies (name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        data = (name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description,)
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(sql, data)
+        conn.commit()
+        return redirect('/movies')
     else:
       return redirect('/new_movies')
   except Exception as e:
@@ -775,8 +878,17 @@ def edit_movies(id):
     cursor = conn.cursor()
     cursor.execute("SELECT id, name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description from movies WHERE id=%s", id)
     row = cursor.fetchone()
+    cursor1 = conn.cursor()
+    cursor1.execute("SELECT id, name from movieformats")
+    movieformat = cursor1.fetchall()
+    cursor2 = conn.cursor()
+    cursor2.execute("SELECT id, name from movietypes")
+    movietype = cursor2.fetchall()
+    cursor3 = conn.cursor()
+    cursor3.execute("SELECT country_code, country from countries")
+    country = cursor3.fetchall()
     if row:
-      return render_template('layouts/default.html', content=render_template( 'pages/movies/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/movies/edit.html', form=form, movieformat=movieformat, movietype=movietype, country=country, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -788,27 +900,31 @@ def edit_movies(id):
 @app.route('/movies/update', methods=['POST'])
 def update_movies():
   try:		
+    movieformat_id = request.form.get('movieformat_id')
+    movietype_id = request.form.get('movietype_id')
+    country_code = request.form.get('country_code')
     form = EditMoviesForm(request.form)
     msg = None
     id = request.form.get('id', '', type=int)
-    name = request.form.get('name', '', type=str)
-    movieformat_id = request.form.get('movieformat_id', '', type=int)
-    movietype_id = request.form.get('movietype_id', '', type=int)      
+    name = request.form.get('name', '', type=str)  
     duration = request.form.get('duration', '', type=int)  
-    country_code = request.form.get('country_code', '', type=str)
     start_date = request.form.get('start_date', '', type=str)
     end_date = request.form.get('end_date', '', type=str)
-    image = request.form.get('image', '', type=str)
     note = request.form.get('note', '', type=str)
     description = request.form.get('description', '', type=str)
-    if id and name and movieformat_id and movietype_id and duration and country_code and start_date and end_date and image and note and description and request.method == 'POST':
-      sql = "UPDATE movies SET name=%s,movieformat_id=%s,movietype_id=%s,duration=%s,country_code=%s,start_date=%s,end_date=%s,image=%s,note=%s,description=%s WHERE id=%s"
-      data = (name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description, id,)
-      conn = mysql.connect()
-      cursor = conn.cursor()
-      cursor.execute(sql, data)
-      conn.commit()
-      return redirect('/movies')
+    if request.method == 'POST':
+      file = request.files['image']
+      if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        image = "/static/assets/img/uploads/"+filename
+        sql = "UPDATE movies SET name=%s,movieformat_id=%s,movietype_id=%s,duration=%s,country_code=%s,start_date=%s,end_date=%s,image=%s,note=%s,description=%s WHERE id=%s"
+        data = (name, movieformat_id, movietype_id, duration, country_code, start_date, end_date, image, note, description, id,)
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(sql, data)
+        conn.commit()
+        return redirect('/movies')
     else:
       return redirect('/edit_movies/%s',username)
   except Exception as e:
@@ -828,13 +944,13 @@ def seattypes():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/seattypes/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/seattypes/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_seattypes')
 def add_seattypes():
   form = AddSeattypesForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/seattypes/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/seattypes/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/seattypes/add', methods=['POST'])
 def addSeattypes():
@@ -885,7 +1001,7 @@ def edit_seattypes(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/seattypes/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/seattypes/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -928,13 +1044,13 @@ def roomformats():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/roomformats/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/roomformats/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_roomformats')
 def add_roomformats():
   form = AddRoomformatsForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/roomformats/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/roomformats/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/roomformats/add', methods=['POST'])
 def addRoomformats():
@@ -985,7 +1101,7 @@ def edit_roomformats(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/roomformats/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/roomformats/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -1028,13 +1144,13 @@ def rooms():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/rooms/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/rooms/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_rooms')
 def add_rooms():
   form = AddRoomsForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/rooms/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/rooms/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/rooms/add', methods=['POST'])
 def addRooms():
@@ -1090,7 +1206,7 @@ def edit_rooms(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/rooms/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/rooms/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -1138,13 +1254,13 @@ def status():
   res = db_query()
   logger = logging.getLogger('example_logger')
   logger.warning(res)
-  return render_template('layouts/default.html', content=render_template( 'pages/status/index.html',result=res, content_type='application/json'))
+  return render_template('layouts/default.html', content=render_template( 'pages/status/index.html',result=res, content_type='application/json', username=session['username'], avatar=session['avatar']))
 
 @app.route('/new_status')
 def add_status():
   form = AddStatusForm(request.form)
   msg = None
-  return render_template('layouts/default.html', content=render_template( 'pages/status/new.html', form=form, msg=msg))
+  return render_template('layouts/default.html', content=render_template( 'pages/status/new.html', form=form, msg=msg, username=session['username'], avatar=session['avatar']))
 
 @app.route('/status/add', methods=['POST'])
 def addStatus():
@@ -1195,7 +1311,7 @@ def edit_status(id):
     if row:
       logger = logging.getLogger('example_logger')
       logger.warning(row)  
-      return render_template('layouts/default.html', content=render_template( 'pages/status/edit.html', form=form, row=row))
+      return render_template('layouts/default.html', content=render_template( 'pages/status/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
     else:
       return 'Error loading #{id}'.format(id=id)
   except Exception as e:
@@ -1226,3 +1342,106 @@ def update_status():
   finally:
     cursor.close() 
     conn.close()
+
+# Showings (Xuất chiếu)
+class ExampleForm(Form):
+    dt = DateField('DatePicker', format='%Y-%m-%d')
+    startDate = DateField('DatePicker', format='%Y-%m-%d')
+    endDate = DateField('DatePicker', format='%Y-%m-%d')
+    id = StringField  ('Id')
+
+@app.route('/showings', methods=['POST', 'GET'])
+def showings():
+  try:
+    form = ExampleForm()
+    id = request.form.get('id', '', type=int)
+    tvalue= str(datetime.today().strftime("%Y-%m-%d"))
+    if form.validate_on_submit():
+      tvalue = str(form.dt.data.strftime('%Y-%m-%d'))
+    def db_query():
+      db = Database()
+      emps = db.list_showings()
+      return emps
+    res = db_query()
+    demo = datetime.strptime(tvalue, '%Y-%m-%d').date()
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, room_name from rooms")
+    row = cursor.fetchall()
+    cursor1 = conn.cursor()
+    cursor1.execute("SELECT DISTINCT showtime from showings")
+    row1 = cursor1.fetchall()
+    cursor3 = conn.cursor()
+    cursor3.execute("SELECT id, name from movies")
+    row3 = cursor3.fetchall()
+    if id:
+      cursor2 = conn.cursor()
+      cursor2.execute("SELECT name, time from showings INNER JOIN movies ON showings.movie_id = movies.id WHERE id=%s",id)
+      row2 = cursor2.fetchone()
+      logger = logging.getLogger('example_logger')
+      logger.warning(row2)
+    
+    if row and row1:
+      logger = logging.getLogger('example_logger')
+      logger.warning(row3)
+      
+      for i in range(len(row1)):
+        logger.warning(row1[i][0])
+      for i in range(len(res)):
+        logger.warning(res[i][1])
+      return render_template('layouts/default.html', content=render_template( 'pages/showings/index.html', row=row, row1=row1, row3=row3, res=res, demo=demo, form=form, username=session['username'], avatar=session['avatar']))
+    else:
+      return 'Error loading '
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/showings/update/<string:id>/<string:movie_id>/<string:time>')
+def update_showings(id, movie_id, time):
+  try:
+    time_obj = datetime.strptime(time, '%H:%M:%S').time()
+    id_obj = int(id)
+    movie_id_obj = int(movie_id)
+    sql = "UPDATE showings SET movie_id=%s, time=%s WHERE id=%s"
+    data = (movie_id_obj, time_obj, id_obj,)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute(sql, data)
+    conn.commit()
+    return redirect('/showings')
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/showings/add/<string:id>/<string:movie_id>/<string:time>/<string:date>')
+def addShowings(id, movie_id, time, date):
+  try:
+    date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+    time_obj = datetime.strptime(time, '%H:%M:%S').time()
+    id_obj = int(id)
+    movie_id_obj = int(movie_id)
+    sql = "INSERT INTO showings (movie_id, room_id, showtime, time) VALUES(%s, %s, %s, %s )"
+    data = (movie_id_obj, id_obj, date_obj, time_obj,)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute(sql, data)
+    conn.commit()
+    return redirect('/showings')
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
+
+@app.route('/showings/delete/<string:id>')
+def delete_showings(id):
+    id_obj = int(id)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM showings WHERE id=%s", (id,))
+    conn.commit()
+    return redirect('/showings')

@@ -1,6 +1,8 @@
 from flask_wtf          import FlaskForm
 from flask_wtf.file     import FileField, FileRequired
 from wtforms            import StringField, TextAreaField, SubmitField, PasswordField
+from wtforms.fields.html5 import DateField
+from flask_ckeditor import CKEditorField
 from wtforms.validators import InputRequired, Email, DataRequired
 
 class LoginForm(FlaskForm):
@@ -77,7 +79,7 @@ class AddMoviesForm(FlaskForm):
 	end_date    = StringField  (u'End Date'        , validators=[DataRequired()])
 	image    = StringField  (u'Image'        , validators=[DataRequired()])
 	note    = StringField  (u'Note'        , validators=[DataRequired()])
-	description    = StringField  (u'Description'        , validators=[DataRequired()])
+	description    = CKEditorField  (u'Description'        , validators=[DataRequired()])
 
 class EditMoviesForm(FlaskForm):
 	id    = StringField  (u'ID'        , validators=[DataRequired()])
@@ -90,7 +92,7 @@ class EditMoviesForm(FlaskForm):
 	end_date    = StringField  (u'End Date'        , validators=[DataRequired()])
 	image    = StringField  (u'Image'        , validators=[DataRequired()])
 	note    = StringField  (u'Note'        , validators=[DataRequired()])
-	description    = StringField  (u'Description'        , validators=[DataRequired()])
+	description    = CKEditorField  (u'Description'        , validators=[DataRequired()])
 
 class AddSeattypesForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
@@ -132,3 +134,4 @@ class AddStatusForm(FlaskForm):
 class EditStatusForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
 	seat_condition    = StringField  (u'Seat condition'        , validators=[DataRequired()])
+

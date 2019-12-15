@@ -14,7 +14,7 @@ import os, logging
 
 from app        import app, lm, db, bc
 from app.models import User
-from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm, AddSeattypesForm, EditSeattypesForm, AddRoomformatsForm, EditRoomformatsForm, AddRoomsForm, EditRoomsForm, AddStatusForm, EditStatusForm
+from app.forms  import LoginForm, RegisterForm, AddMovietypesForm, EditMovietypesForm, AddMovieFormatsForm, EditMovieFormatsForm, AddRolesForm, EditRolesForm, AddEmployeesForm, EditEmployeesForm, AddCountriesForm, EditCountriesForm, AddMoviesForm, EditMoviesForm, AddSeattypesForm, EditSeattypesForm, AddRoomformatsForm, EditRoomformatsForm, AddRoomsForm, EditRoomsForm, AddStatusForm, EditStatusForm, EditPassForm
 from flaskext.mysql import MySQL
 
 UPLOAD_FOLDER = 'D:/python/heroku/mtb-admin/app/static/assets/img/uploads'
@@ -33,6 +33,8 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 # app.config['MYSQL_DATABASE_HOST'] = 'db4free.net'
 mysql.init_app(app)
 
+tvalue= str(datetime.today().strftime("%Y-%m-%d"))
+today = datetime.strptime(tvalue, '%Y-%m-%d').date()
 class Database:
   def __init__(self):
     self.con = mysql.connect()
@@ -50,7 +52,7 @@ class Database:
     result = self.cur.fetchall()
     return result
   def list_employees(self):
-    self.cur.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar from employees")
+    self.cur.execute("SELECT username, fullname, birthday, address, phone, gender, role_name, avatar from employees INNER JOIN roles ON employees.role_id = roles.id ")
     result = self.cur.fetchall()
     return result
   def list_countries(self):
@@ -81,8 +83,30 @@ class Database:
     self.cur.execute("SELECT room_id, time, showtime, showings.id, movie_id, movies.name, duration from showings INNER JOIN movies ON showings.movie_id = movies.id ORDER BY time ASC")
     result = self.cur.fetchall()
     return result
-
-
+  def count_member(self):
+    self.cur.execute("SELECT COUNT(username) from members")
+    result = self.cur.fetchone()
+    return result
+  def total_sale(self):
+    self.cur.execute("SELECT price, create_at from tickets")
+    result = self.cur.fetchall()
+    return result
+  def seat_on_room(self):
+    self.cur.execute("SELECT max_row_seat, max_seat_row, id from rooms")
+    result = self.cur.fetchall()
+    return result
+  def count_showing(self):
+    self.cur.execute("SELECT room_id FROM showings WHERE showtime=%s",today)
+    result = self.cur.fetchall()
+    return result
+  def seat_booked_day(self):
+    self.cur.execute("SELECT price, unitprice FROM tickets d INNER JOIN showings v ON v.id = d.showing_id WHERE v.showtime=%s",today)
+    result = self.cur.fetchall()
+    return result
+  def ticket_purchase(self):
+    self.cur.execute("SELECT username FROM tickets")
+    result = self.cur.fetchall()
+    return result
 @app.route('/sitemap.xml')
 def sitemap():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'sitemap.xml')
@@ -199,7 +223,51 @@ def icons():
     return render_template('layouts/default.html',
                             content=render_template( 'pages/icons.html') )
 
+# Settings
+@app.route('/settings')
+def settings():
+  try:
+    form = EditEmployeesForm(request.form)
+    conn = mysql.connect()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar, about from employees WHERE username=%s", session['username'])
+    row = cursor.fetchone()
+    if row:
+      return render_template('layouts/default.html', content=render_template( 'pages/settings.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
+    else:
+      return 'Error loading #{username}'.format(username=username)
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
 
+# Change password
+@app.route('/change-password')
+def password():
+  form = EditPassForm(request.form)
+  msg = None
+  conn = mysql.connect()
+  cursor = conn.cursor()
+  cursor.execute("SELECT password FROM employees WHERE username=%s", session['username'])
+  row = cursor.fetchone()
+  return render_template('layouts/default.html', content=render_template( 'pages/change-password.html', row=row, form=form, msg=msg, username=session['username'], avatar=session['avatar']))
+
+@app.route('/password/update/<string:new_password>')
+def update_password(new_password):
+  try:
+      sql = "UPDATE employees SET password=%s WHERE username=%s"
+      data = (new_password, session['username'],)
+      conn = mysql.connect()
+      cursor = conn.cursor()
+      cursor.execute(sql, data)
+      conn.commit()
+      return redirect('/profile')
+  except Exception as e:
+    print(e)
+  finally:
+    cursor.close() 
+    conn.close()
 
 # Render the tables page
 @app.route('/tables.html')
@@ -211,6 +279,81 @@ def tables():
 # App main route + generic routing
 @app.route('/home')
 def home():
+    def db_query():
+      db = Database()
+      emps = db.count_member()
+      return emps
+    countmember = db_query()
+    def db_query2():
+      db = Database()
+      emps = db.seat_on_room()
+      return emps
+    total_seat_room = db_query2()
+    def db_query3():
+      db = Database()
+      emps = db.count_showing()
+      return emps
+    showing = db_query3()
+    def db_query4():
+      db = Database()
+      emps = db.seat_booked_day()
+      return emps
+    seat_booked = db_query4()
+    def db_query5():
+      db = Database()
+      emps = db.ticket_purchase()
+      return emps
+    ticket_purchase_form = db_query5()
+    def db_query1():
+      db = Database()
+      emps = db.total_sale()
+      return emps
+    sale = db_query1()
+    by_member = 0
+    no_by_member = 0
+    for row in ticket_purchase_form:
+      if row[0]=="no":
+        no_by_member += 1
+      else:
+        by_member += 1
+    ratio = round((by_member/(no_by_member + by_member))*100,2)
+    total = 0
+    sale_may = 0
+    sale_jun = 0
+    sale_jul = 0
+    sale_aug = 0
+    sale_sep = 0
+    sale_oct = 0
+    sale_nov = 0
+    sale_dec = 0
+    for row in sale:
+      total += int(row[0])
+    for row in sale:
+      if row[1].month==5:
+        sale_may += row[0]
+      elif row[1].month==6:
+        sale_jun += row[0]
+      elif row[1].month==7:
+        sale_jul += row[0]
+      elif row[1].month==8:
+        sale_aug += row[0]
+      elif row[1].month==9:
+        sale_sep += row[0]
+      elif row[1].month==10:
+        sale_oct += row[0]
+      elif row[1].month==11:
+        sale_nov += row[0]
+      elif row[1].month==12:
+        sale_dec += row[0]
+    total_seat_day = 0
+    for row in showing:
+      for row1 in total_seat_room:
+        if row[0]==row1[2]:
+            total_seat_day +=  int(row1[0])*int(row1[1])
+    total_seat_booked_day = 0
+    for row in seat_booked:
+      total_seat_booked_day += int(row[0])/int(row[1])
+    performance = round((total_seat_booked_day/total_seat_day)*100,2)
     # Check if user is loggedin
     if 'loggedin' in session:
         conn = mysql.connect()
@@ -238,7 +381,7 @@ def home():
         cursor7 = conn.cursor()
         cursor7.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=12')
         dec = cursor7.fetchone()
-        return render_template('layouts/default.html', content=render_template( 'pages/index.html', account=account, jul=jul, aug=aug, sep=sep, oct=oct, nov=nov, dec=dec, member=member, username=session['username'], avatar=session['avatar']))
+        return render_template('layouts/default.html', content=render_template( 'pages/index.html', account=account, jul=jul, aug=aug, sep=sep, oct=oct, nov=nov, dec=dec, sale_may=sale_may, sale_jun=sale_jun, sale_jul=sale_jul, sale_aug=sale_aug, sale_sep=sale_sep, sale_oct=sale_oct, sale_nov=sale_nov, sale_dec=sale_dec, member=member, username=session['username'], avatar=session['avatar'], countmember=countmember, total=total, performance=performance, by_member=by_member, no_by_member=no_by_member, ratio=ratio))
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
 
@@ -631,7 +774,7 @@ def edit_employees(username):
     form = EditEmployeesForm(request.form)
     conn = mysql.connect()
     cursor = conn.cursor()
-    cursor.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar from employees WHERE username=%s", username)
+    cursor.execute("SELECT username, fullname, birthday, address, phone, gender, role_id, avatar, about from employees WHERE username=%s", username)
     row = cursor.fetchone()
     if row:
       return render_template('layouts/default.html', content=render_template( 'pages/employees/edit.html', form=form, row=row, username=session['username'], avatar=session['avatar']))
@@ -655,10 +798,10 @@ def update_employees():
     phone = request.form.get('phone', '', type=str)
     gender = request.form.get('gender', '', type=str)
     role_id = request.form.get('role_id', '', type=int)
-    avatar = request.form.get('avatar', '', type=str)
-    if username and fullname and birthday and address and phone and gender and role_id and avatar and request.method == 'POST':
-      sql = "UPDATE employees SET fullname=%s,birthday=%s,address=%s,phone=%s,gender=%s,role_id=%s,avatar=%s WHERE username=%s"
-      data = (fullname, birthday, address, phone, gender, role_id, avatar, username,)
+    about = request.form.get('about', '', type=str)
+    if username and fullname and birthday and address and phone and gender and role_id and about and request.method == 'POST':
+      sql = "UPDATE employees SET fullname=%s,birthday=%s,address=%s,phone=%s,gender=%s,role_id=%s,about=%s WHERE username=%s"
+      data = (fullname, birthday, address, phone, gender, role_id, about, username,)
       conn = mysql.connect()
       cursor = conn.cursor()
       cursor.execute(sql, data)

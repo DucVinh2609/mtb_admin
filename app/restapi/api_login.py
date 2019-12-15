@@ -28,5 +28,6 @@ class apiLogin(Resource):
 			cursor.execute("SELECT * from members where username='" + username + "' and password='" + password + "'")
 			rows = cursor.fetchone()
 			resp = jsonify(rows)
+			resp = jsonify('Login successfully!')
 			resp.status_code = 200
 			return resp

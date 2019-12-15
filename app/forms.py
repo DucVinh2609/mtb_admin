@@ -56,6 +56,7 @@ class AddEmployeesForm(FlaskForm):
 	gender    = StringField  (u'Gender'        , validators=[DataRequired()])
 	role_id    = StringField  (u'RoleId'        , validators=[DataRequired()])
 	avatar    = StringField  (u'Avatar'        , validators=[DataRequired()])
+	about    = StringField  (u'About'        , validators=[DataRequired()])	
 
 class EditEmployeesForm(FlaskForm):
 	username    = StringField  (u'Username'        , validators=[DataRequired()])
@@ -67,6 +68,7 @@ class EditEmployeesForm(FlaskForm):
 	gender    = StringField  (u'Gender'        , validators=[DataRequired()])
 	role_id    = StringField  (u'RoleId'        , validators=[DataRequired()])
 	avatar    = StringField  (u'Avatar'        , validators=[DataRequired()])
+	about    = StringField  (u'About'        , validators=[DataRequired()])
 
 class AddMoviesForm(FlaskForm):
 	id    = StringField  (u'ID'        , validators=[DataRequired()])
@@ -135,3 +137,8 @@ class EditStatusForm(FlaskForm):
 	id    = StringField  (u'Id'        , validators=[DataRequired()])
 	seat_condition    = StringField  (u'Seat condition'        , validators=[DataRequired()])
 
+class EditPassForm(FlaskForm):
+	current_password    = PasswordField  (u'Current password'        , validators=[DataRequired()])
+	new_password    = PasswordField  (u'New password'        , validators=[DataRequired()])
+	confirm_password    = PasswordField  (u'Cofirm password'        , validators=[DataRequired()])
+	

@@ -48,6 +48,8 @@ class apiAddTickets(Resource):
       username = request.json['username']
       event_id = request.json['event_id']
       unitprice = request.json['unitprice']
+      if username == "no":
+        gmail = request.json['gmail']
       today= str(datetime.today().strftime("%Y-%m-%d"))
       create_at = datetime.strptime(today, '%Y-%m-%d').date()
       # validate the received values
@@ -71,10 +73,17 @@ class apiAddTickets(Resource):
         cursor3 = conn.cursor()
         cursor3.execute("SELECT MAX(id) as LastID FROM tickets")
         lastticket = cursor3.fetchone()
+        if username != "no":
+          cursor4 = conn.cursor()
+          cursor4.execute("SELECT email FROM tickets d INNER JOIN members v ON v.username = d.username WHERE d.id=%s",lastticket[0])
+          email = cursor4.fetchone()
         link_to_post = "Movie: %s" % str(movie[0])+"\r\nRooms: %s" % str(room[0])+"\r\nShowings: %s" % str(showing[1])+" * %s" % str(showing[0].strftime("%d-%m-%Y"))+"\r\nSeats: %s" % seats
         url = pyqrcode.create(link_to_post, encoding="utf-8")
         url.png('app/static/assets/img/qrcode/'+str(lastticket[0])+'.png', scale=8)
-        msg = Message('Booking ticket successful!', recipients=['khongphaidangvuadau09@gmail.com'])
+        if username != "no":
+          msg = Message('Booking ticket successful!', recipients=[str(email[0])])
+        else:
+          msg = Message('Booking ticket successful!', recipients=[gmail])
         msg.html = '<b>Confirm successful booking ticket!</b><br><br>You have successfully booked a ticket with the following ticket information: <br>Movies: '+str(movie[0])+'<br>Rooms: '+str(room[0])+'<br>Showings: '+str(showing[1])+' * '+str(showing[0].strftime("%d-%m-%Y"))+'<br>Seats: '+seats+'<br><div><img style="heigh: 200px; width: 200px;" src="https://mtb-admin.herokuapp.com/static/assets/img/qrcode/6.png"></div>'
         mail.send(msg)
         resp = jsonify('Tickets added successfully!')

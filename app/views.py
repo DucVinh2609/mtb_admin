@@ -353,7 +353,10 @@ def home():
     total_seat_booked_day = 0
     for row in seat_booked:
       total_seat_booked_day += int(row[0])/int(row[1])
-    performance = round((total_seat_booked_day/total_seat_day)*100,2)
+    try:
+      performance = round((total_seat_booked_day/total_seat_day)*100,2)
+    except ZeroDivisionError:
+      performance = 0
     # Check if user is loggedin
     if 'loggedin' in session:
         conn = mysql.connect()

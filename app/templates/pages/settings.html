@@ -1,0 +1,90 @@
+<div class="main-content">
+  <!-- Top navbar -->
+  {% include 'includes/nav-top-right.html' %}
+
+  <!-- Header -->
+  {% include 'includes/top-stats.html' %}
+  
+  <!-- Page content -->
+  <div class="container-fluid mt--7">
+      <div class="row mt-5">
+        <div class="col">
+          <div class="card bg-default shadow">
+            <div class="card-header bg-transparent border-0">
+              <h3 class="text-white mb-0">SETTINGS ACCOUNT</h3>
+            </div>
+            <div class="card-body px-lg-5 py-lg-5">
+                <form role="form" method="post" action="/employees/update">
+                  {{ form.hidden_tag() }}
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.fullname(value=row[1],class="form-control") }}
+                    </div>
+                    <div>
+                      {{ form.username(value=row[0],class="form-control", type="hidden") }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.birthday(value=row[2],class="form-control") }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.address(value=row[3],class="form-control") }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.phone(value=row[4],class="form-control") }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.gender(value=row[5],class="form-control") }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.role_id(value=row[6],class="form-control") }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="input-group input-group-alternative">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                      </div>
+                      {{ form.about(value=row[8],class="form-control") }}
+                    </div>
+                  </div>
+                
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-primary my-4">Update</button>
+                  </div>
+                </form>
+              </div>
+          </div>
+        </div>
+      </div>
+    {% include 'includes/footer.html' %}
+    
+  </div>
+</div>

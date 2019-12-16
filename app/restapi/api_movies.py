@@ -46,7 +46,7 @@ class apiMovieDetailDate(Resource):
   def get(self, id):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
-			sql="SELECT id id, movie_id movie_id, room_id room_id, showtime showtime from showings WHERE movie_id=%s GROUP BY showtime ORDER BY showtime DESC"
+			sql="SELECT DISTINCT showtime FROM showings WHERE movie_id=%s ORDER BY showtime ASC"
 			data=(id)
 			cursor.execute(sql, data)
 			rows = cursor.fetchall()
@@ -60,7 +60,7 @@ class apiMovieDetailTime(Resource):
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
 			# sql=""
 			# data=(id)
-			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s",id)
+			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s ORDER BY time ASC",id)
 			rows = cursor.fetchall()
 			resp = jsonify(rows)
 			resp.status_code = 200

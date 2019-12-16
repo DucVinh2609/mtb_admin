@@ -84,8 +84,8 @@ class apiAddTickets(Resource):
           msg = Message('Booking ticket successful!', recipients=[str(email[0])])
         else:
           msg = Message('Booking ticket successful!', recipients=[gmail])
-        msg.html = '<b>Confirm successful booking ticket!</b><br><br>You have successfully booked a ticket with the following ticket information: <br>Movies: '+str(movie[0])+'<br>Rooms: '+str(room[0])+'<br>Showings: '+str(showing[1])+' * '+str(showing[0].strftime("%d-%m-%Y"))+'<br>Seats: '+seats+'<br><div><img style="heigh: 200px; width: 200px;" src="https://mtb-admin.herokuapp.com/static/assets/img/qrcode/6.png"></div>'
+        msg.html = '<b>Confirm successful booking ticket!</b><br><br>You have successfully booked a ticket with the following ticket information: <br>Movies: '+str(movie[0])+'<br>Rooms: '+str(room[0])+'<br>Showings: '+str(showing[1])+' * '+str(showing[0].strftime("%d-%m-%Y"))+'<br>Seats: '+seats+'<br><div><img style="heigh: 200px; width: 200px;" src="http://localhost:5000/static/assets/img/qrcode/'+str(lastticket[0])+'.png"></div>'
         mail.send(msg)
-        resp = jsonify('Tickets added successfully!')
+        resp = jsonify([{"movie": str(movie[0]), "seats": seats, "price": price, "rooms": str(room[0]), "showings": str(showing[1]), "date": str(showing[0].strftime("%d-%m-%Y"))}])
         resp.status_code = 200
         return resp

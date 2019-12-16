@@ -317,6 +317,7 @@ def home():
       else:
         by_member += 1
     ratio = round((by_member/(no_by_member + by_member))*100,2)
+    unratio = round(100-ratio,2)
     total = 0
     sale_may = 0
     sale_jun = 0
@@ -384,7 +385,7 @@ def home():
         cursor7 = conn.cursor()
         cursor7.execute('SELECT COUNT(id) FROM tickets WHERE MONTH(create_at)=12')
         dec = cursor7.fetchone()
-        return render_template('layouts/default.html', content=render_template( 'pages/index.html', account=account, jul=jul, aug=aug, sep=sep, oct=oct, nov=nov, dec=dec, sale_may=sale_may, sale_jun=sale_jun, sale_jul=sale_jul, sale_aug=sale_aug, sale_sep=sale_sep, sale_oct=sale_oct, sale_nov=sale_nov, sale_dec=sale_dec, member=member, username=session['username'], avatar=session['avatar'], countmember=countmember, total=total, performance=performance, by_member=by_member, no_by_member=no_by_member, ratio=ratio))
+        return render_template('layouts/default.html', content=render_template( 'pages/index.html', account=account, jul=jul, aug=aug, sep=sep, oct=oct, nov=nov, dec=dec, sale_may=sale_may, sale_jun=sale_jun, sale_jul=sale_jul, sale_aug=sale_aug, sale_sep=sale_sep, sale_oct=sale_oct, sale_nov=sale_nov, sale_dec=sale_dec, member=member, username=session['username'], avatar=session['avatar'], countmember=countmember, total=total, performance=performance, by_member=by_member, no_by_member=no_by_member, ratio=ratio, unratio=unratio))
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
 

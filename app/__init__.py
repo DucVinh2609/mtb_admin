@@ -6,7 +6,7 @@ from flask_login      import LoginManager
 from flask_bcrypt     import Bcrypt
 from flask_ckeditor   import CKEditor
 from flask_restful     import Api
-
+from flask_cors import CORS
 # Grabs the folder where the script runs.
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -20,6 +20,9 @@ bc = Bcrypt      (app) # flask-bcrypt
 
 lm = LoginManager(   ) # flask-loginmanager
 lm.init_app(app) # init the login manager
+
+# enable CORS
+CORS(app, resources={r'/*': {'origins': '*'}})
 
 from app import views, models
 from app.restapi.demo.main import apiMovieFormats, apiAddMovieFormats, apiEditMovieFormats, apiDeleteMovieFormats

@@ -175,10 +175,10 @@
                     </td>
                     <td>
                       <div class="d-flex align-items-center">
-                        <span class="mr-2">{{100 - ratio}}%</span>
+                        <span class="mr-2">{{unratio}}%</span>
                         <div>
                           <div class="progress">
-                            <div class="progress-bar bg-gradient-danger" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="--ratio: {{100 - ratio}}; width: calc(var(--ratio)*1%);"></div>
+                            <div class="progress-bar bg-gradient-danger" role="progressbar" aria-valuenow="{{unratio}}" aria-valuemin="0" aria-valuemax="100" style="--ratio: {{unratio}}; width: calc(var(--ratio)*1%);"></div>
                           </div>
                         </div>
                       </div>

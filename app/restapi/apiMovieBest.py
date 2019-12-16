@@ -25,7 +25,7 @@ class apiBestMovies(Resource):
   def get(self):
       conn = mysql.connect()
       cursor = conn.cursor(pymysql.cursors.DictCursor)
-      cursor.execute("SELECT id id, name name, movieformat_id movieformat_id, movietype_id movietype_id, duration duration, country_code country_code, start_date start_date, end_date end_date, image image, note note, description description, rate rate from movies order by rate DESC LIMIT 0, 5")
+      cursor.execute("SELECT id id, name name, movieformat_id movieformat_id, movietype_id movietype_id, duration duration, country_code country_code, start_date start_date, end_date end_date, image image, note note, description description, rate rate from movies order by rate DESC LIMIT 0, 6")
       rows = cursor.fetchall()		  
       resp = jsonify(rows)
       resp.status_code = 200

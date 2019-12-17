@@ -33,6 +33,7 @@ from app.restapi.api_login import apiLogin
 from app.restapi.api_max_row_seat import apiMaxRowSeat
 from app.restapi.api_seat_was_booked import apiSeatWasBooked
 from app.restapi.api_tickets import apiAddTickets
+from app.restapi.api_rate import apiAddRate
 # from app.restapi.apiMovieDetail import apiMovieDetail
 
 # Inject REST api 
@@ -50,3 +51,4 @@ api.add_resource(apiLogin, '/api/login/<string:username>/<string:password>')
 api.add_resource(apiMaxRowSeat, '/api/max_row_seat/<int:id>')
 api.add_resource(apiSeatWasBooked, '/api/seat_was_booked/<int:id>')
 api.add_resource(apiAddTickets, '/api/add_tickets')
+api.add_resource(apiAddRate, '/api/rate/<string:username>/<int:movie_id>/<int:rate>')

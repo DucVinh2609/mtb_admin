@@ -1,15 +1,14 @@
 import pymysql
 import json
 from app import app
-from flask import jsonify,session
+from flask import jsonify
 from flask import flash, request
 from flask_restful import Resource, Api
 from flaskext.mysql import MySQL
 from datetime import date, timedelta
 from time import mktime
-
 mysql = MySQL()
- 
+
 # MySQL configurations
 app.config['MYSQL_DATABASE_USER'] = 'root'
 app.config['MYSQL_DATABASE_PASSWORD'] = ''
@@ -21,17 +20,16 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 # app.config['MYSQL_DATABASE_HOST'] = 'db4free.net'
 mysql.init_app(app)
 
-class apiLogin(Resource):
-  def get(self, username, password):
-			conn = mysql.connect()
-			cursor = conn.cursor(pymysql.cursors.DictCursor)
-			cursor.execute("SELECT username from members where username='" + username + "' and password='" + password + "'")
-			rows = cursor.fetchone()
-			if rows:
-				session['loggedin'] = True
-				session['username'] = rows
-				resp = jsonify({"session": cookies})
+
+class apiAddRate(Resource):
+  def post(self, username, movie_id, rate):
+			if request.method == 'POST':
+				sql = "INSERT INTO rates(movie_id, member_username, rate) VALUES(%s, %s, %s)"
+				data = (movie_id, username, rate,)
+				conn = mysql.connect()
+				cursor = conn.cursor()
+				cursor.execute(sql, data)
+				conn.commit()
+				resp = jsonify('User added rates!')
 				resp.status_code = 200
-			else:
-				resp.status_code = 400
-			return resp
+				return resp

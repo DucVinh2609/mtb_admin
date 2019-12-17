@@ -36,7 +36,7 @@ class apiMovieDetail(Resource):
   def get(self, id):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
-			cursor.execute("SELECT id id, name name, movieformat_id movieformat_id, movietype_id movietype_id, duration duration, country_code country_code, start_date start_date, end_date end_date, image image, note note, description description from movies WHERE id=%s",id)
+			cursor.execute("SELECT id id, name name, movieformat_id movieformat_id, movietype_id movietype_id, duration duration, country_code country_code, start_date start_date, end_date end_date, image image, note note, description description, rate rate, director director, actors actors, url_video1 url_video1, url_video2 url_video2, image1 image1, image2 image2, age_limit age_limit from movies WHERE id=%s",id)
 			rows = cursor.fetchall()
 			resp = jsonify(rows)
 			resp.status_code = 200

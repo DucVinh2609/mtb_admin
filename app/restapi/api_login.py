@@ -30,7 +30,7 @@ class apiLogin(Resource):
 			if rows:
 				session['loggedin'] = True
 				session['username'] = rows
-				resp = jsonify({"session": cookies})
+				resp = jsonify({"session": rows})
 				resp.status_code = 200
 			else:
 				resp.status_code = 400

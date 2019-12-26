@@ -26,7 +26,7 @@ class apiMovies(Resource):
   def get(self):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
-			cursor.execute("SELECT id id, name name, movieformat_id movieformat_id, movietype_id movietype_id, duration duration, country_code country_code, start_date start_date, end_date end_date, image image, note note, description description from movies")
+			cursor.execute("SELECT id id, name name, movieformat_id movieformat_id, movietype_id movietype_id, duration duration, country_code country_code, start_date start_date, end_date end_date, image image, note note, description description, rate rate from movies")
 			rows = cursor.fetchall()
 			resp = jsonify(rows)
 			resp.status_code = 200
@@ -46,7 +46,7 @@ class apiMovieDetailDate(Resource):
   def get(self, id):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
-			sql="SELECT DISTINCT showtime FROM showings WHERE movie_id=%s ORDER BY showtime ASC"
+			sql="SELECT DISTINCT showtime FROM showings WHERE movie_id=%s AND showtime >= CURDATE() ORDER BY showtime ASC"
 			data=(id)
 			cursor.execute(sql, data)
 			rows = cursor.fetchall()
@@ -60,7 +60,7 @@ class apiMovieDetailTime(Resource):
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
 			# sql=""
 			# data=(id)
-			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s ORDER BY time ASC",id)
+			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s AND CAST(time AS time)>=CAST(CONVERT_TZ(NOW(),'+00:00','+07:00') AS time) ORDER BY time ASC",id)
 			rows = cursor.fetchall()
 			resp = jsonify(rows)
 			resp.status_code = 200

@@ -25,12 +25,10 @@ class apiLogin(Resource):
   def get(self, username, password):
 			conn = mysql.connect()
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
-			cursor.execute("SELECT username from members where username='" + username + "' and password='" + password + "'")
+			cursor.execute("SELECT username, fullname, birthday, address, phone, email, gender from members where username='" + username + "' and password='" + password + "'")
 			rows = cursor.fetchone()
 			if rows:
-				session['loggedin'] = True
-				session['username'] = rows
-				resp = jsonify({"session": rows})
+				resp = jsonify(rows)
 				resp.status_code = 200
 			else:
 				resp.status_code = 400

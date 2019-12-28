@@ -35,6 +35,7 @@ from app.restapi.api_seat_was_booked import apiSeatWasBooked
 from app.restapi.api_tickets import apiAddTickets
 from app.restapi.api_rate import apiAddRate
 from app.restapi.api_edit_members import apiEditMembers
+from app.restapi.api_ticket_member import apiTicketByMember
 # from app.restapi.apiMovieDetail import apiMovieDetail
 
 # Inject REST api 
@@ -54,3 +55,4 @@ api.add_resource(apiSeatWasBooked, '/api/seat_was_booked/<int:id>')
 api.add_resource(apiAddTickets, '/api/add_tickets')
 api.add_resource(apiAddRate, '/api/rate/<string:username>/<int:movie_id>/<int:rate>')
 api.add_resource(apiEditMembers, '/api/member/edit/<string:username>')
+api.add_resource(apiTicketByMember, '/api/watchlist/<string:username>')

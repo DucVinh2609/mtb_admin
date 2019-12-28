@@ -22,7 +22,7 @@ app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
 class apiEditMembers(Resource):
-  def put(self, username):
+  def post(self, username):
     _json = request.json
     _fullname = _json['fullname']
     _birthday = _json['birthday']
@@ -31,7 +31,7 @@ class apiEditMembers(Resource):
     _gender = _json['gender']
     _birthday = datetime.strptime(_birthday, '%Y-%m-%d').date()
 		# validate the received values
-    if _fullname and _birthday and _address and _phone and _gender and username and request.method == 'PUT':
+    if _fullname and _birthday and _address and _phone and _gender and username and request.method == 'POST':
 			# save edits
       sql = "UPDATE members SET fullname=%s, birthday=%s, address=%s, phone=%s, gender=%s WHERE username=%s"
       data = (_fullname, _birthday, _address, _phone, _gender, username,)

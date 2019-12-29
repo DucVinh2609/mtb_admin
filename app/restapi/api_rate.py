@@ -33,3 +33,49 @@ class apiAddRate(Resource):
 				resp = jsonify('User added rates!')
 				resp.status_code = 200
 				return resp
+
+
+class apiListRateMember(Resource):
+  def get(self, username, movie_id):
+			if request.method == 'GET':
+				conn = mysql.connect()
+				cursor = conn.cursor(pymysql.cursors.DictCursor)
+				cursor.execute("SELECT d.id id, d.rate rate FROM rates d INNER JOIN movies v ON v.id=d.movie_id WHERE member_username=%s AND movie_id=%s", (username, movie_id,))
+				rows = cursor.fetchall()
+				resp = jsonify(rows)
+				resp.status_code = 200
+				return resp
+
+class apiDeleteRate(Resource):
+  def delete(self, id):
+			conn = mysql.connect()
+			cursor = conn.cursor()
+			cursor.execute("DELETE FROM rates WHERE id=%s", (id,))
+			conn.commit()
+			resp = jsonify('Rate deleted successfully!')
+			resp.status_code = 200
+			return resp
+
+class apiListRateMovie(Resource):
+  def get(self, movie_id):
+			if request.method == 'GET':
+				conn = mysql.connect()
+				cursor = conn.cursor(pymysql.cursors.DictCursor)
+				cursor.execute("SELECT d.id id, v.rate rate FROM rates d INNER JOIN movies v ON v.id=d.movie_id WHERE movie_id=%s", (movie_id,))
+				rows = cursor.fetchall()
+				resp = jsonify(rows)
+				resp.status_code = 200
+				return resp
+
+class apiEditRateMovie(Resource):
+  def put(self, movie_id, rate):
+			if request.method == 'PUT':
+				sql = "UPDATE movies SET rate=%s WHERE id=%s"
+				data = (rate, movie_id,)
+				conn = mysql.connect()
+				cursor = conn.cursor()
+				cursor.execute(sql, data)
+				conn.commit()
+				resp = jsonify('Movie rate updated successfully!')
+				resp.status_code = 200
+				return resp

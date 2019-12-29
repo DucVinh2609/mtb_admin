@@ -60,7 +60,8 @@ class apiMovieDetailTime(Resource):
 			cursor = conn.cursor(pymysql.cursors.DictCursor)
 			# sql=""
 			# data=(id)
-			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s AND CAST(time AS time)>=CAST(CONVERT_TZ(NOW(),'+00:00','+07:00') AS time) ORDER BY time ASC",id)
+			# cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s AND CAST(time AS time)>=CAST(CONVERT_TZ(NOW(),'+00:00','+07:00') AS time) ORDER BY time ASC",id)
+			cursor.execute("SELECT id id, movie_id movie_id, room_id room_id, showtime showtime, time time from showings WHERE movie_id=%s ORDER BY time ASC",id)
 			rows = cursor.fetchall()
 			resp = jsonify(rows)
 			resp.status_code = 200
